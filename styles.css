@@ -18,7 +18,10 @@ body {
   scroll-behavior: smooth;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  /* Replaced overflow-x: hidden with clip to prevent iOS scroll jank */
+  overflow-x: clip; 
+  /* Allow smooth vertical native scrolling */
+  touch-action: pan-y; 
 }
 
 /* Glassmorphism utility */
@@ -27,6 +30,15 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Disable heavy backdrop-filter on mobile to prevent severe scroll lag */
+@media (max-width: 768px) {
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(28, 28, 30, 0.95); /* Make it more opaque to compensate for lack of blur */
+  }
 }
 
 /* Card 3D Flip Setup */
@@ -42,16 +54,14 @@ body {
   backface-visibility: hidden;
 }
 
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
-
 .flip-card-inner {
   position: relative;
   width: 100%;
   height: 100%;
   transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
   transform-style: preserve-3d;
+  /* Hardware acceleration for smooth flipping */
+  will-change: transform;
 }
 
 .flip-card.flipped .flip-card-inner {
@@ -73,6 +83,8 @@ body {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  /* Touch action optimization */
+  touch-action: pan-y;
 }
 
 .flip-card-back {
@@ -85,6 +97,8 @@ body {
   transform: translateY(40px) rotateX(-10deg);
   transform-origin: top center;
   transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Hardware acceleration for scroll animations */
+  will-change: transform, opacity;
 }
 
 .reveal-item.is-visible {
@@ -129,6 +143,7 @@ button:active {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
+  will-change: opacity;
 }
 
 #top-anchor.visible {

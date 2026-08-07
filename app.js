@@ -32,10 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const topAnchor = document.getElementById('top-anchor');
 
     // SCROLL REVEAL (Intersection Observer)
-    const revealObserver = new IntersectionObserver((entries) => {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('is-visible');
+                // Unobserve after revealing to save performance
+                observer.unobserve(entry.target);
             }
         });
     }, { threshold: 0.1 });
@@ -46,13 +48,20 @@ document.addEventListener('DOMContentLoaded', () => {
     observeReveals();
 
     // TOP ANCHOR VISIBILITY
+    let isScrolling = false;
     window.addEventListener('scroll', () => {
-        if (window.scrollY > 300) {
-            topAnchor.classList.add('visible');
-        } else {
-            topAnchor.classList.remove('visible');
+        if (!isScrolling) {
+            window.requestAnimationFrame(() => {
+                if (window.scrollY > 300) {
+                    topAnchor.classList.add('visible');
+                } else {
+                    topAnchor.classList.remove('visible');
+                }
+                isScrolling = false;
+            });
+            isScrolling = true;
         }
-    });
+    }, { passive: true }); // passive: true improves scrolling performance on mobile
 
     // GLOBAL PROGRESS UPDATE
     const progressText = document.getElementById('progress-text');
