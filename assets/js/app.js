@@ -1157,14 +1157,25 @@ const hideApiKeyModal = () => {
 };
 
 document.getElementById('btn-close-modal')?.addEventListener('click', hideApiKeyModal);
+document.getElementById('btn-modify-api-key')?.addEventListener('click', () => {
+    if (state.geminiApiKey) {
+        apiKeyInput.value = state.geminiApiKey;
+    }
+    showApiKeyModal();
+});
+
 document.getElementById('btn-save-key')?.addEventListener('click', () => {
     const key = apiKeyInput.value.trim();
     if (key) {
         state.geminiApiKey = key;
         saveState();
         hideApiKeyModal();
-        // Retry generation
-        btnGenerate.click();
+        
+        if (uploadedFiles.length > 0) {
+            btnGenerate.click();
+        } else {
+            showToast("API Key saved successfully.", "success");
+        }
     }
 });
 
