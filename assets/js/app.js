@@ -3,19 +3,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // STATE MANAGEMENT
     // ==========================================
     const STATE_KEY = 'ai_flashcard_state_v3';
-    let state = JSON.parse(localStorage.getItem(STATE_KEY)) || {
-        progress: {}, // { id: 'mastered' | 'review' }
+    
+    const defaultState = {
+        progress: {},
         selectedDifficulty: null,
         selectedCategory: null,
         customCollections: {},
         geminiApiKey: null,
-        needReview: {} // { id: { nextReviewDate: timestamp, mistakeCount: number } }
+        needReview: {},
+        notes: {}
     };
 
-    // Backward-compatibility and Migration
-    if (!state.customCollections) state.customCollections = {};
-    if (!state.needReview) state.needReview = {};
-    if (!state.notes) state.notes = {};
+    let state;
+    try {
+        const stored = localStorage.getItem(STATE_KEY);
+        if (stored) {
+            state = JSON.parse(stored);
+            if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                state = { ...defaultState };
+            } else {
+                // Merge with defaults to ensure no missing keys
+                state = { ...defaultState, ...state };
+                
+                // Strictly enforce object types for critical state maps
+                if (typeof state.customCollections !== 'object' || Array.isArray(state.customCollections)) {
+                    state.customCollections = {};
+                }
+                if (typeof state.progress !== 'object' || Array.isArray(state.progress)) {
+                    state.progress = {};
+                }
+                if (typeof state.needReview !== 'object' || Array.isArray(state.needReview)) {
+                    state.needReview = {};
+                }
+                if (typeof state.notes !== 'object' || Array.isArray(state.notes)) {
+                    state.notes = {};
+                }
+            }
+        } else {
+            state = { ...defaultState };
+        }
+    } catch (error) {
+        console.error('[Persistence] Error parsing state, falling back to default', error);
+        state = { ...defaultState };
+    }
+
     if (state.streak !== undefined) delete state.streak;
 
     // Migrate old 'review' progress into new Need Review system if missing
@@ -125,7 +156,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (appMode === 'custom') {
             const collection = state.customCollections[currentCustomCollectionId];
             if (!collection || !customCurrentDiff) return;
-            pool = collection.cards[customCurrentDiff.toLowerCase()] || [];
+            
+            if (customCurrentDiff.toLowerCase() === 'all') {
+                pool = [
+                    ...(collection.cards.easy || []),
+                    ...(collection.cards.medium || []),
+                    ...(collection.cards.hard || [])
+                ];
+            } else {
+                pool = collection.cards[customCurrentDiff.toLowerCase()] || [];
+            }
         }
 
         const total = pool.length;
