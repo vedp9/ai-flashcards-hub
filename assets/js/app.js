@@ -999,11 +999,11 @@ const MAX_FILES = 20;
 const updateFileUI = () => {
     fileListEl.innerHTML = '';
     uploadCounter.textContent = `${uploadedFiles.length} / ${MAX_FILES} files uploaded`;
-    btnGenerate.disabled = uploadedFiles.length === 0;
+    
     if (uploadedFiles.length === 0) {
-        btnGenerate.classList.add('opacity-50', 'cursor-not-allowed');
+        btnGenerate.classList.add('opacity-50', 'grayscale');
     } else {
-        btnGenerate.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnGenerate.classList.remove('opacity-50', 'grayscale');
     }
 
     uploadedFiles.forEach(fObj => {
@@ -1142,6 +1142,7 @@ const hideLoading = () => document.getElementById('loading-overlay').classList.a
 
 const showApiKeyModal = () => {
     apiKeyModal.classList.remove('hidden');
+    apiKeyModal.classList.add('flex');
     setTimeout(() => {
         apiKeyModalContent.classList.remove('scale-95', 'opacity-0');
     }, 10);
@@ -1151,6 +1152,7 @@ const hideApiKeyModal = () => {
     apiKeyModalContent.classList.add('scale-95', 'opacity-0');
     setTimeout(() => {
         apiKeyModal.classList.add('hidden');
+        apiKeyModal.classList.remove('flex');
     }, 300);
 };
 
@@ -1172,7 +1174,10 @@ btnGenerate?.addEventListener('click', async () => {
         return;
     }
 
-    if (uploadedFiles.length === 0) return;
+    if (uploadedFiles.length === 0) {
+        showToast("Please upload at least one file to generate flashcards.", "warning");
+        return;
+    }
 
     showLoading();
 
