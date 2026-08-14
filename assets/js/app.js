@@ -30,11 +30,43 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGlobalProgress();
     };
 
+    // ==========================================
+    // TOAST NOTIFICATIONS
+    // ==========================================
+    const showToast = (message, type = 'success') => {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        const iconClass = isError ? 'ph-warning-circle text-danger' : 'ph-check-circle text-success';
+        const borderClass = isError ? 'border-danger/30' : 'border-success/30';
+        
+        toast.className = `apple-card flex items-center gap-3 px-4 py-3 border ${borderClass} bg-surface shadow-lg transform translate-y-[-20px] opacity-0 transition-all duration-300 pointer-events-auto max-w-full`;
+        toast.innerHTML = `
+            <i class="ph-fill ${iconClass} text-xl flex-shrink-0"></i>
+            <p class="apple-body-strong text-ink text-sm">${message}</p>
+        `;
+        
+        container.appendChild(toast);
+        
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+        });
+        
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                if (container.contains(toast)) container.removeChild(toast);
+            }, 300);
+        }, 4000);
+    };
+
     // DOM ELEMENTS
     const viewDifficulty = document.getElementById('view-difficulty');
     const viewTopics = document.getElementById('view-topics');
     const viewFlashcards = document.getElementById('view-flashcards');
-    const viewQuiz = document.getElementById('view-quiz');
+
     const viewGlossary = document.getElementById('view-glossary');
     const viewCustomize = document.getElementById('view-customize');
     const viewProfile = document.getElementById('view-profile');
@@ -112,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.needReview = {};
             saveState();
             initFlashcards();
-            initQuiz();
+
         }
     });
 
@@ -124,12 +156,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let customCurrentDiff = null;
 
     const hideAllViews = () => {
-        [viewDifficulty, viewTopics, viewFlashcards, viewQuiz, viewGlossary, viewCustomize, viewProfile].forEach(v => {
+        document.body.classList.remove('overflow-hidden');
+        [viewDifficulty, viewTopics, viewFlashcards, viewGlossary, viewCustomize, viewProfile].forEach(v => {
             if (v) {
                 v.classList.add('hidden');
                 v.classList.remove('block');
             }
         });
+        
+        // Reset scroll position on container when switching views
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
     };
 
     // Mobile Menu Logic
@@ -182,93 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selectedDifficulty = null;
         state.selectedCategory = null;
         saveState();
-        renderRecommendations();
     };
 
-    const renderRecommendations = () => {
-        const grid = document.getElementById('recommendations-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-
-        const hasHistory = Object.keys(state.progress).length > 0 || Object.keys(state.needReview).length > 0;
-
-        if (!hasHistory) {
-            grid.innerHTML = `
-                <div class="apple-card p-6 border border-divider col-span-full text-center">
-                    <i class="ph-fill ph-sparkle text-3xl text-primary mb-3"></i>
-                    <h3 class="apple-title-sm text-ink mb-2">Start Your Journey</h3>
-                    <p class="text-sm text-muted">Select a difficulty level above to start learning, or head to the Profile to generate your own flashcards.</p>
-                </div>
-            `;
-            return;
-        }
-
-        let reviewCards = [];
-        const now = Date.now();
-        let allCards = [...flashcardsData];
-        for (const col of Object.values(state.customCollections)) {
-            allCards = allCards.concat(col.cards.easy || [], col.cards.medium || [], col.cards.hard || []);
-        }
-
-        for (const [id, data] of Object.entries(state.needReview)) {
-            if (data.nextReviewDate < now) {
-                const card = allCards.find(c => (c.id || c.word) === id);
-                if (card) reviewCards.push(card);
-            }
-        }
-
-        let recs = [];
-        if (reviewCards.length > 0) {
-            recs = reviewCards.sort(() => Math.random() - 0.5).slice(0, 2);
-        }
-        const unmastered = allCards.filter(c => state.progress[c.id || c.word] !== 'mastered' && !recs.find(r => r === c));
-        const needed = 3 - recs.length;
-        if (needed > 0 && unmastered.length > 0) {
-            recs = recs.concat(unmastered.sort(() => Math.random() - 0.5).slice(0, needed));
-        }
-
-        if (recs.length === 0) {
-            grid.innerHTML = `
-                <div class="apple-card p-6 border border-divider col-span-full text-center">
-                    <i class="ph-fill ph-check-circle text-3xl text-success mb-3"></i>
-                    <h3 class="apple-title-sm text-ink mb-2">You're all caught up!</h3>
-                    <p class="text-sm text-muted">You've mastered everything. Try generating some new flashcards.</p>
-                </div>
-            `;
-            return;
-        }
-
-        recs.forEach(card => {
-            const btn = document.createElement('button');
-            btn.className = 'text-left apple-card p-5 border border-divider hover:border-primary transition-colors bg-surface flex flex-col justify-between h-full';
-            btn.innerHTML = `
-                <div>
-                    <span class="text-xs font-bold text-primary uppercase tracking-wider">${card.category}</span>
-                    <h4 class="text-lg font-semibold text-ink mt-2 truncate">${card.word}</h4>
-                </div>
-                <div class="mt-6 text-sm text-primary font-medium flex items-center gap-1 group">
-                    Review now <i class="ph-bold ph-arrow-right transition-transform group-hover:translate-x-1"></i>
-                </div>
-            `;
-            btn.addEventListener('click', () => {
-                appMode = 'review';
-                currentQueue = [card];
-                currentIndex = 0;
-                hideAllViews();
-                viewFlashcards.classList.remove('hidden');
-                breadcrumbs.classList.add('flex');
-                breadcrumbs.classList.remove('hidden');
-                bcLevel.textContent = 'Home';
-                bcLevel.onclick = showDifficultyScreen;
-                bcSepTopic.classList.remove('hidden');
-                bcTopic.classList.remove('hidden');
-                bcTopic.textContent = 'Recommended';
-                if (flipCardEl) flipCardEl.classList.remove('flipped');
-                renderCurrentCard();
-            });
-            grid.appendChild(btn);
-        });
-    };
 
     const showTopicsScreen = (difficulty) => {
         appMode = 'built-in';
@@ -337,15 +291,22 @@ document.addEventListener('DOMContentLoaded', () => {
         navTabsContainer.classList.add('flex');
 
         navTabs.forEach(t => t.classList.remove('active'));
-        document.querySelector('[data-target="flashcards"]').classList.add('active');
+        
+        const targetTab = state.activeTab === 'glossary' ? 'glossary' : 'flashcards';
+        document.querySelector(`[data-target="${targetTab}"]`)?.classList.add('active');
 
         hideAllViews();
-        viewFlashcards.classList.remove('hidden');
-        viewFlashcards.classList.add('block');
+        const targetView = targetTab === 'glossary' ? viewGlossary : viewFlashcards;
+        targetView.classList.remove('hidden');
+        targetView.classList.add('block');
+        
+        if (targetTab === 'flashcards') {
+            document.body.classList.add('overflow-hidden');
+        }
 
         updateGlobalProgress();
         initFlashcards();
-        initQuiz();
+
         initGlossaryFilters();
         renderGlossary();
         observeReveals();
@@ -368,6 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('nav-customize-btn')?.addEventListener('click', showCustomizeScreen);
+    document.getElementById('nav-quick-customize-btn')?.addEventListener('click', showCustomizeScreen);
 
     const showProfileScreen = () => {
     hideAllViews();
@@ -455,6 +417,7 @@ const showCustomFlashcards = (diff) => {
     hideAllViews();
     viewFlashcards.classList.remove('hidden');
     viewFlashcards.classList.add('block');
+    document.body.classList.add('overflow-hidden');
 
     updateGlobalProgress();
     initFlashcards();
@@ -482,6 +445,9 @@ navTabs.forEach(tab => {
     tab.addEventListener('click', () => {
         navTabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+        
+        state.activeTab = tab.dataset.target;
+        saveState();
 
         hideAllViews();
         const targetId = `view-${tab.dataset.target}`;
@@ -489,6 +455,18 @@ navTabs.forEach(tab => {
         if (targetSection) {
             targetSection.classList.remove('hidden');
             targetSection.classList.add('block');
+            
+            if (tab.dataset.target === 'flashcards') {
+                document.body.classList.add('overflow-hidden');
+            }
+            
+            targetSection.querySelectorAll('.reveal-item').forEach(el => {
+                el.classList.add('active');
+            });
+            
+            if (tab.dataset.target === 'glossary') {
+                renderGlossary();
+            }
         }
     });
 });
@@ -537,7 +515,7 @@ const initFlashcards = () => {
 
         pool = allCards.filter(c => {
             const cardId = c.id || c.word;
-            return state.needReview[cardId] && state.needReview[cardId].nextReviewDate < now;
+            return !!state.needReview[cardId];
         });
 
         if (btnEditCard) btnEditCard.classList.add('hidden');
@@ -574,28 +552,171 @@ const renderCurrentCard = () => {
     flipCardEl.firstElementChild.style.borderColor =
         status === 'mastered' ? 'var(--color-success)' :
             status === 'review' ? 'var(--color-danger)' : 'var(--color-divider)';
+
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    if (btnPrev) btnPrev.style.display = currentIndex === 0 ? 'none' : 'block';
+    if (btnNext) btnNext.style.display = currentIndex === currentQueue.length - 1 ? 'none' : 'block';
 };
 
 if (flipCardEl) {
-    flipCardEl.addEventListener('click', () => {
-        flipCardEl.classList.toggle('flipped');
+    let isDragging = false;
+    let startX = 0;
+    let currentTranslate = 0;
+    const swipeThreshold = 100;
+    
+    // Desktop 3D Glare & Tilt
+    flipCardEl.addEventListener('mousemove', (e) => {
+        if (window.matchMedia("(hover: none)").matches) return; // Only desktop
+        const rect = flipCardEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = ((y - centerY) / centerY) * -10; // Max 10deg tilt
+        const rotateY = ((x - centerX) / centerX) * 10;
+        
+        const inner = flipCardEl.querySelector('.flip-card-inner');
+        if (!flipCardEl.classList.contains('flipped')) {
+            inner.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        } else {
+            inner.style.transform = `rotateY(180deg) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
+        }
+
+        const glares = flipCardEl.querySelectorAll('.glare');
+        const bgX = (x / rect.width) * 100;
+        const bgY = (y / rect.height) * 100;
+        glares.forEach(glare => {
+            glare.style.background = `radial-gradient(circle at ${bgX}% ${bgY}%, rgba(255,255,255,0.4) 0%, transparent 60%)`;
+        });
+    });
+
+    flipCardEl.addEventListener('mouseleave', () => {
+        const inner = flipCardEl.querySelector('.flip-card-inner');
+        if (!flipCardEl.classList.contains('flipped')) {
+            inner.style.transform = '';
+        } else {
+            inner.style.transform = 'rotateY(180deg)';
+        }
+    });
+
+    // Unified Pointer Events for Flawless Gestures
+    flipCardEl.addEventListener('pointerdown', (e) => {
+        // Ignore if clicking a button (like Got It / Need Review)
+        if (e.target.closest('button')) return;
+        
+        startX = e.clientX;
+        isDragging = true;
+        currentTranslate = 0;
+        flipCardEl.setPointerCapture(e.pointerId);
+        flipCardEl.style.transition = 'none';
+    });
+
+    flipCardEl.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const currentX = e.clientX;
+        currentTranslate = currentX - startX;
+        
+        // Prevent swiping past bounds
+        if (currentIndex === 0 && currentTranslate > 0) currentTranslate *= 0.2;
+        if (currentIndex === currentQueue.length - 1 && currentTranslate < 0) currentTranslate *= 0.2;
+        
+        const rotate = currentTranslate * 0.05;
+        flipCardEl.style.transform = `translateX(${currentTranslate}px) rotate(${rotate}deg)`;
+    });
+
+    flipCardEl.addEventListener('pointerup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        flipCardEl.releasePointerCapture(e.pointerId);
+        flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        // Check if it was a tap (moved less than 5px)
+        if (Math.abs(currentTranslate) < 5) {
+            // It's a tap, flip the card!
+            flipCardEl.style.transform = 'translateX(0) rotate(0)'; // Snap back if slightly moved
+            const isMenuExpanded = document.getElementById('mobile-menu-btn')?.getAttribute('aria-expanded') === 'true';
+            if (isMenuExpanded) {
+                if (typeof toggleMobileMenu === 'function') toggleMobileMenu(true);
+                return;
+            }
+            flipCardEl.classList.toggle('flipped');
+            return;
+        }
+
+        // Otherwise, handle swipe logic
+        if (currentTranslate > swipeThreshold && currentIndex > 0) {
+            // Swipe right (Prev)
+            flipCardEl.style.transform = `translateX(100vw) rotate(20deg)`;
+            setTimeout(() => {
+                flipCardEl.classList.remove('flipped');
+                flipCardEl.style.transition = 'none';
+                flipCardEl.style.transform = 'translateX(-100vw) rotate(-20deg)';
+                currentIndex = (currentIndex - 1 + currentQueue.length) % currentQueue.length;
+                renderCurrentCard();
+                void flipCardEl.offsetWidth; // Force reflow
+                flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                flipCardEl.style.transform = 'translateX(0) rotate(0)';
+            }, 250);
+        } else if (currentTranslate < -swipeThreshold && currentIndex < currentQueue.length - 1) {
+            // Swipe left (Next)
+            flipCardEl.style.transform = `translateX(-100vw) rotate(-20deg)`;
+            setTimeout(() => {
+                flipCardEl.classList.remove('flipped');
+                flipCardEl.style.transition = 'none';
+                flipCardEl.style.transform = 'translateX(100vw) rotate(20deg)';
+                currentIndex = (currentIndex + 1) % currentQueue.length;
+                renderCurrentCard();
+                void flipCardEl.offsetWidth; // Force reflow
+                flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                flipCardEl.style.transform = 'translateX(0) rotate(0)';
+            }, 250);
+        } else {
+            // Snap back
+            flipCardEl.style.transform = 'translateX(0) rotate(0)';
+        }
+    });
+
+    flipCardEl.addEventListener('pointercancel', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        flipCardEl.releasePointerCapture(e.pointerId);
+        flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        flipCardEl.style.transform = 'translateX(0) rotate(0)';
     });
 }
 
 document.getElementById('btn-prev')?.addEventListener('click', () => {
-    flipCardEl.classList.remove('flipped');
+    if (currentIndex === 0) return;
+    flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    flipCardEl.style.transform = `translateX(100vw) rotate(20deg)`;
     setTimeout(() => {
+        flipCardEl.classList.remove('flipped');
+        flipCardEl.style.transition = 'none';
+        flipCardEl.style.transform = 'translateX(-100vw) rotate(-20deg)';
         currentIndex = (currentIndex - 1 + currentQueue.length) % currentQueue.length;
         renderCurrentCard();
-    }, 150);
+        void flipCardEl.offsetWidth; // Force reflow
+        flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        flipCardEl.style.transform = 'translateX(0) rotate(0)';
+    }, 250);
 });
 
 document.getElementById('btn-next')?.addEventListener('click', () => {
-    flipCardEl.classList.remove('flipped');
+    if (currentIndex === currentQueue.length - 1) return;
+    flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    flipCardEl.style.transform = `translateX(-100vw) rotate(-20deg)`;
     setTimeout(() => {
+        flipCardEl.classList.remove('flipped');
+        flipCardEl.style.transition = 'none';
+        flipCardEl.style.transform = 'translateX(100vw) rotate(20deg)';
         currentIndex = (currentIndex + 1) % currentQueue.length;
         renderCurrentCard();
-    }, 150);
+        void flipCardEl.offsetWidth; // Force reflow
+        flipCardEl.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        flipCardEl.style.transform = 'translateX(0) rotate(0)';
+    }, 250);
 });
 
 document.getElementById('btn-shuffle')?.addEventListener('click', () => {
@@ -612,6 +733,14 @@ const updateCardStatus = (status) => {
 
     const now = Date.now();
     if (status === 'mastered') { // Got It!
+        if (window.confetti) {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.8 },
+                colors: ['#34c759', '#2997ff', '#ffffff'] // Apple-style colors
+            });
+        }
         state.progress[cardId] = 'mastered';
         if (state.needReview[cardId]) {
             delete state.needReview[cardId]; // Resolves review state
@@ -619,25 +748,45 @@ const updateCardStatus = (status) => {
     } else if (status === 'review') { // Need Review
         state.progress[cardId] = 'review';
         if (!state.needReview[cardId]) {
-            state.needReview[cardId] = { nextReviewDate: now + 24 * 60 * 60 * 1000, mistakeCount: 1 };
+            state.needReview[cardId] = { mistakeCount: 1 };
         } else {
             state.needReview[cardId].mistakeCount += 1;
-            state.needReview[cardId].nextReviewDate = now + 3 * 24 * 60 * 60 * 1000;
         }
     }
 
+    updateGlobalProgress();
     saveState();
+
+    // Exit Animation (Distinct from swipe gesture)
+    flipCardEl.style.transition = 'transform 0.3s ease-in, opacity 0.3s ease-in';
+    flipCardEl.style.transform = 'scale(0.8)';
+    flipCardEl.style.opacity = '0';
 
     flipCardEl.classList.remove('flipped');
     setTimeout(() => {
-        // Remove from current queue if in review mode and answered
+        flipCardEl.style.transition = 'none';
+        flipCardEl.style.transform = 'scale(1.1)'; // Start slightly larger for next card
+        flipCardEl.style.opacity = '0';
+
+        // Remove from current queue if in review mode and mastered
         if (appMode === 'review') {
-            currentQueue.splice(currentIndex, 1);
-            if (currentIndex >= currentQueue.length) currentIndex = 0;
+            if (status === 'mastered') {
+                currentQueue.splice(currentIndex, 1);
+                if (currentIndex >= currentQueue.length) currentIndex = 0;
+            } else {
+                currentIndex = (currentIndex + 1) % currentQueue.length;
+            }
         } else {
             currentIndex = (currentIndex + 1) % currentQueue.length;
         }
         renderCurrentCard();
+        
+        // Force reflow
+        void flipCardEl.offsetWidth;
+
+        flipCardEl.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out';
+        flipCardEl.style.transform = 'scale(1)';
+        flipCardEl.style.opacity = '1';
     }, 300);
 };
 
@@ -673,89 +822,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ==========================================
-// QUIZ & GLOSSARY MODE (Built-in Only)
-// ==========================================
-const quizCategoryEl = document.getElementById('quiz-category');
-const quizQuestionEl = document.getElementById('quiz-question');
-const quizOptionsContainer = document.getElementById('quiz-options');
-const quizFeedbackEl = document.getElementById('quiz-feedback');
-const quizNextBtn = document.getElementById('btn-quiz-next');
-
-let currentQuizCard = null;
-
-const initQuiz = () => {
-    if (appMode !== 'built-in' || !state.selectedDifficulty) return;
-
-    let pool = flashcardsData.filter(c => c.difficulty === state.selectedDifficulty);
-    if (state.selectedCategory && state.selectedCategory !== 'All') {
-        pool = pool.filter(c => c.category === state.selectedCategory);
-    }
-
-    if (pool.length === 0) return;
-
-    quizFeedbackEl.classList.add('hidden');
-    quizNextBtn.classList.add('hidden');
-    quizOptionsContainer.innerHTML = '';
-
-    currentQuizCard = pool[Math.floor(Math.random() * pool.length)];
-    quizCategoryEl.textContent = currentQuizCard.category;
-
-    const promptText = Math.random() > 0.5 ? currentQuizCard.simple_def : currentQuizCard.real_world_scenario;
-    quizQuestionEl.textContent = promptText;
-
-    const sameDifficultyCards = flashcardsData.filter(c => c.difficulty === state.selectedDifficulty);
-    const otherCards = sameDifficultyCards.filter(c => c.id !== currentQuizCard.id);
-    const distractors = otherCards.sort(() => Math.random() - 0.5).slice(0, 3).map(c => c.word);
-
-    const options = [...distractors, currentQuizCard.word].sort(() => Math.random() - 0.5);
-
-    options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left p-4 rounded-xl border border-divider bg-surface hover:bg-surface-pearl transition-colors text-lg md:text-xl font-bold text-primary';
-        btn.textContent = opt;
-        btn.addEventListener('click', () => handleQuizAnswer(btn, opt === currentQuizCard.word));
-        quizOptionsContainer.appendChild(btn);
-    });
-};
-
-const handleQuizAnswer = (selectedBtn, isCorrect) => {
-    Array.from(quizOptionsContainer.children).forEach(btn => {
-        btn.disabled = true;
-        btn.classList.remove('hover:bg-surface-pearl', 'cursor-pointer');
-        if (btn.textContent === currentQuizCard.word) {
-            btn.classList.add('border-success', 'bg-success/10');
-        }
-    });
-
-    quizFeedbackEl.classList.remove('hidden');
-    if (isCorrect) {
-        selectedBtn.classList.add('border-success', 'bg-success/10');
-        quizFeedbackEl.innerHTML = `<span class="text-success font-bold"><i class="ph-fill ph-check-circle"></i> Correct!</span> <div class="mt-2 text-ink"><strong>Explanation:</strong> ${currentQuizCard.simple_def} <br/> <span class="text-muted text-sm mt-1 block">${currentQuizCard.real_world_scenario || ''}</span></div>`;
-        quizFeedbackEl.className = 'mt-6 rounded-xl p-4 text-sm bg-success/10 border border-success/20 animate-fade-in block';
-    } else {
-        selectedBtn.classList.add('border-danger', 'bg-danger/10');
-        quizFeedbackEl.innerHTML = `<span class="text-danger font-bold"><i class="ph-fill ph-x-circle"></i> Incorrect.</span> The correct concept was <strong>${currentQuizCard.word}</strong>. <div class="mt-2 text-ink"><strong>Explanation:</strong> ${currentQuizCard.simple_def} <br/> <span class="text-muted text-sm mt-1 block">${currentQuizCard.real_world_scenario || ''}</span></div>`;
-        quizFeedbackEl.className = 'mt-6 rounded-xl p-4 text-sm bg-danger/10 border border-danger/20 animate-fade-in block';
-
-        // Push to Need Review queue
-        const now = Date.now();
-        const cardId = currentQuizCard.id || currentQuizCard.word; // Fallback to word if id is missing in custom
-        if (!state.needReview[cardId]) {
-            state.needReview[cardId] = { nextReviewDate: now + 24 * 60 * 60 * 1000, mistakeCount: 1 };
-        } else {
-            state.needReview[cardId].mistakeCount += 1;
-            // E.g., next review in 3 days if they failed again
-            state.needReview[cardId].nextReviewDate = now + 3 * 24 * 60 * 60 * 1000;
-        }
-    }
-
-    saveState();
-    quizNextBtn.classList.remove('hidden');
-};
-
-quizNextBtn?.addEventListener('click', initQuiz);
-
-// Glossary is built-in only
+// GLOSSARY MODE (Built-in Only)
+// ==========================================// Glossary is built-in only
 const glossarySearchInput = document.getElementById('glossary-search');
 const glossaryList = document.getElementById('glossary-list');
 const diffFilter = document.getElementById('glossary-difficulty-filter');
@@ -827,17 +895,17 @@ const renderGlossary = () => {
         item.className = 'bg-surface border border-divider rounded-xl overflow-hidden';
         item.innerHTML = `
                 <button class="w-full text-left p-4 md:p-6 flex justify-between items-center hover:bg-surface-pearl transition-colors focus:outline-none">
-                    <div class="pr-4">
-                        <span class="text-xs text-primary font-medium uppercase tracking-wider mb-1 block">${card.category}</span>
-                        <h3 class="apple-body-strong text-primary">${card.word}</h3>
+                    <div class="pr-4 min-w-0">
+                        <span class="text-xs text-primary font-medium uppercase tracking-wider mb-1 block truncate">${card.category}</span>
+                        <h3 class="apple-body-strong text-primary break-words overflow-wrap-anywhere">${card.word}</h3>
                     </div>
                     <i class="ph ph-caret-down text-muted transition-transform duration-200"></i>
                 </button>
                 <div class="hidden px-4 md:px-6 pb-6 text-muted leading-relaxed border-t border-divider pt-4 bg-canvas">
-                    <p class="text-ink mb-4">${card.simple_def}</p>
+                    <p class="text-ink mb-4 break-words overflow-wrap-anywhere">${card.simple_def}</p>
                     <div class="bg-surface p-4 rounded-lg border-l-4 border-primary mb-4 shadow-sm">
                         <span class="text-xs uppercase tracking-widest text-primary font-semibold block mb-2">Scenario</span>
-                        <span class="text-ink">${card.real_world_scenario}</span>
+                        <span class="text-ink break-words overflow-wrap-anywhere">${card.real_world_scenario}</span>
                     </div>
                     <div class="mt-3 text-xs text-muted"><i class="ph ph-books"></i> ${card.source}</div>
                 </div>
@@ -928,7 +996,7 @@ const handleFiles = (files) => {
                 uploadedFiles.push({ file, id: Math.random().toString(36).substring(7) });
             }
         } else {
-            alert(`File format .${ext} is not supported.`);
+            showToast(`File format .${ext} is not supported.`, 'error');
         }
     }
     updateFileUI();
@@ -1255,12 +1323,12 @@ ${combinedText}
         updateFileUI();
 
         hideLoading();
-        alert(`${validCardCount} flashcards generated successfully.`);
+        showToast(`${validCardCount} flashcards generated successfully.`);
         showProfileScreen();
 
     } catch (error) {
         console.error(error);
-        alert("Failed to generate flashcards. Please check your API key or ensure the documents contain readable text.");
+        showToast("Failed to generate flashcards. Please check your API key or ensure the documents contain readable text.", 'error');
         if (error.message.includes("API_KEY_INVALID")) {
             state.geminiApiKey = null;
             saveState();
@@ -1280,11 +1348,7 @@ const renderProfile = () => {
     const reviewSection = document.getElementById('need-review-section');
     const reviewCount = document.getElementById('need-review-count');
 
-    let dueCount = 0;
-    const now = Date.now();
-    for (const [id, data] of Object.entries(state.needReview)) {
-        if (data.nextReviewDate < now) dueCount++;
-    }
+    let dueCount = Object.keys(state.needReview).length;
 
     if (dueCount > 0 && reviewSection) {
         reviewSection.classList.remove('hidden');
@@ -1514,7 +1578,7 @@ document.getElementById('btn-save-note')?.addEventListener('click', () => {
     const topic = document.getElementById('note-input-topic').value.trim();
     
     if (!title || !content) {
-        alert('Title and content are required.');
+        showToast('Title and content are required.', 'error');
         return;
     }
     
@@ -1602,9 +1666,9 @@ document.getElementById('btn-share-note')?.addEventListener('click', async () =>
         }
     } else {
         navigator.clipboard.writeText(shareText).then(() => {
-            alert('Note copied to clipboard!');
+            showToast('Note copied to clipboard!');
         }).catch(() => {
-            alert('Failed to copy to clipboard.');
+            showToast('Failed to copy to clipboard.', 'error');
         });
     }
 });

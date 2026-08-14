@@ -12,11 +12,17 @@
 
 ## 🚀 Updates Since Last Release
 
-### Product & UX
-- **Mobile Navigation Layout:** Relocated the mobile menu button to the top-right corner and integrated the Appearance (Light/Dark mode) toggle directly inside the menu for better accessibility.
+### Product & Layout UX
+- **Bulletproof Responsive Layout:** Transitioned to a native `100dvh` container with a flex-grow scrollable core, fully eliminating mobile layout cut-off issues caused by artificial flex centering. The app now scrolls completely naturally while preserving static headers.
+- **Snappy Visual Polish:** Removed visible desktop scrollbars for a premium, native-app feel. Accelerated scroll-reveal animations (from 0.8s to 0.4s) across the app and Glossary to eliminate "empty" waiting sensations.
+- **Quick Customize Shortcut:** Added a minimal magic wand quick-link directly in the top mobile navbar for instant access to custom flashcard generation.
+
+### Touch Mechanics & Interactions
+- **Unified Pointer Engine:** Completely overhauled gesture mechanics from legacy `touchstart/touchmove` to modern unified `PointerEvents`. This completely eliminates scroll freezing and phantom swipe conflicts across all mobile and desktop devices.
+- **Action Button Clarity:** Replaced confusing swipe animations on the "Need Review" and "Got It" buttons with a crisp, distinct "scale-down-and-fade" animation to clearly separate manual button clicks from physical touch swipe gestures.
 
 ### Learning Experience
-- **Spaced Repetition (1d/3d):** Replaced the artificial streak system with a proper spaced review engine. Flashcards marked "Need Review" will systematically resurface based on spaced intervals to optimize retention.
+- **Instant "Need Review" Queue:** Removed the restrictive 24-hour spaced repetition delay. Cards marked as "Need Review" are now instantly accessible inside a prioritized, top-level queue in your Profile.
 - **Dynamic Loading Experience:** Added a curated, high-quality rotating quote system during custom flashcard generation to improve the loading experience.
 
 ### Customized Flashcards
@@ -38,7 +44,7 @@
 - **Structured Learning:** Flashcards are automatically grouped into Easy / Medium / Hard difficulty levels, and organized by inferred Topics and Subtopics.
 - **Local Library & Profile:** All custom flashcard collections (metadata and extracted text) are stored entirely locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. You can permanently delete custom collections at any time to scrub your local data.
 - **Spaced Repetition (Need Review):** Mark cards for review to have them resurface on a deterministic 1-day/3-day spaced schedule, or mark them as "Got It" to master them.
-- **Interactive Study Tools:** Edit cards on the fly, take quizzes with explanations, search the glossary, and receive personalized recommendations.
+- **Interactive Study Tools:** Edit cards on the fly, search the glossary, and receive personalized recommendations.
 - **Personal Notes:** A local-first note-taking system built right into your Profile to save thoughts, organize by topic, and natively share or export them.
 
 ## 🎯 Why this project?
