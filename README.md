@@ -4,21 +4,42 @@
   <p>An open-source AI-powered flashcard platform that turns your learning material into Easy, Medium, and Hard flashcards.</p>
 
   <p>
-    <a href="https://vedp9.github.io/ai-flashcards-hub/"><strong>View Live Demo »</strong></a>
+    <a href="https://vedp9.github.io/ai-flashcards-hub/"><strong>Live Application »</strong></a>
   </p>
 </div>
 
 <hr/>
 
+## 🚀 Updates Since Last Release
+
+### Product & UX
+- **Mobile Navigation Layout:** Relocated the mobile menu button to the top-right corner and integrated the Appearance (Light/Dark mode) toggle directly inside the menu for better accessibility.
+
+### Learning Experience
+- **Spaced Repetition (1d/3d):** Replaced the artificial streak system with a proper spaced review engine. Flashcards marked "Need Review" will systematically resurface based on spaced intervals to optimize retention.
+- **Dynamic Loading Experience:** Added a curated, high-quality rotating quote system during custom flashcard generation to improve the loading experience.
+
+### Customized Flashcards
+- **Strict Source Grounding:** Upgraded the Gemini extraction prompt to strictly prioritize source fidelity and factual accuracy. The AI will now skip extracting concepts that lack sufficient definition in the source text instead of hallucinating outside knowledge.
+- **Collection Management:** Added the ability to permanently delete custom-generated collections, which automatically scrubs local storage and associated review schedules.
+- **API Resilience:** Implemented exponential backoff and fallback logic to gracefully handle Google Gemini API rate limits or high-demand model errors.
+
+### Personalization & Review
+- **My Notes:** Introduced a lightweight, local-first note-taking system in the Profile view. Users can save personal thoughts, organize them by topic, and natively share/export them.
+
+### Open Source / Documentation
+- **Testing Guidelines:** Added `TESTING.md` to establish manual verification guidelines for testing the source-grounded accuracy of customized flashcards.
+
 ## ✨ Features
 
-- **Apple-Inspired Design:** Beautiful, minimalist, responsive interface with smooth animations.
-- **AI-Powered Generation:** Upload any PDF, HTML, or TXT file and let Gemini instantly extract the text and build categorized flashcards.
-- **Easy / Medium / Hard Categorization:** Built-in curriculum for AI concepts, and smart categorization for custom generated cards.
-- **Bring-Your-Own-Key (BYOK):** Users provide their own Gemini API key, which is stored locally in their browser.
-- **Local Library:** All custom flashcard collections (metadata and extracted text) are stored locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. No database required.
-- **Interactive Study Tools:** Edit cards on the fly, take quizzes, and search the glossary.
-- **Light & Dark Mode:** Toggle seamlessly between themes that are automatically saved to your preferences.
+- **Apple-Inspired Design & Mobile-First UX:** Beautiful, minimalist, responsive interface with smooth animations. The mobile layout features an accessible top-right menu, safe-area alignments, and robust text-wrapping, paired with seamlessly saved Light & Dark modes.
+- **Source-Grounded AI Generation:** Upload any PDF, HTML, or TXT file and let Gemini extract the text to build categorized flashcards. The AI strictly prioritizes source fidelity—extracting meaningful concepts and scenarios directly from your material without hallucinating outside knowledge. Enjoy curated learning quotes during the dynamic loading process!
+- **Bring-Your-Own-Key (BYOK):** Users provide their own Gemini API key, which is stored locally in the browser. The client communicates directly with Gemini rather than using an AI Flashcards Hub backend. Includes exponential backoff and retry resilience.
+- **Structured Learning:** Flashcards are automatically grouped into Easy / Medium / Hard difficulty levels, and organized by inferred Topics and Subtopics.
+- **Local Library & Profile:** All custom flashcard collections (metadata and extracted text) are stored entirely locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. You can permanently delete custom collections at any time to scrub your local data.
+- **Spaced Repetition (Need Review):** Mark cards for review to have them resurface on a deterministic 1-day/3-day spaced schedule, or mark them as "Got It" to master them.
+- **Interactive Study Tools:** Edit cards on the fly, take quizzes with explanations, search the glossary, and receive personalized recommendations.
+- **Personal Notes:** A local-first note-taking system built right into your Profile to save thoughts, organize by topic, and natively share or export them.
 
 ## 🎯 Why this project?
 
@@ -26,12 +47,7 @@ AI Flashcards Hub exists to democratize learning and exploration of AI concepts 
 
 ## 🚀 Live Demo
 
-Check out the live deployed application here:
-[**https://vedp9.github.io/ai-flashcards-hub/**](https://vedp9.github.io/ai-flashcards-hub/)
 
-## 📸 Screenshots
-
-*(We are currently looking for contributors to add screenshots of the light and dark themes here! Check out the contributing guidelines below if you'd like to help.)*
 
 ## 🛠️ Tech Stack
 
@@ -108,4 +124,4 @@ This project uses the following third-party libraries:
 
 ## ❤️ Contributors
 
-A massive thank you to everyone who has contributed to this project so far. Whether it was a massive feature or a single typo fix, you make open source incredible!
+We welcome contributors! Whether you're fixing a typo, improving documentation, polishing the UI, or building a new feature, every contribution helps make AI Flashcards Hub better. Start small, learn along the way, and build with us.

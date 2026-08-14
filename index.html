@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,28 +10,28 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              primary: 'var(--color-primary)',
-              'primary-on-dark': 'var(--color-primary-on-dark)',
-              ink: 'var(--color-ink)',
-              body: 'var(--color-body)',
-              muted: 'var(--color-body-muted)',
-              canvas: 'var(--color-canvas)',
-              parchment: 'var(--color-canvas-parchment)',
-              surface: 'var(--color-surface)',
-              pearl: 'var(--color-surface-pearl)',
-              divider: 'var(--color-divider)',
-              'divider-soft': 'var(--color-divider-soft)',
-              success: 'var(--color-success)',
-              danger: 'var(--color-danger)'
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        'primary-on-dark': 'var(--color-primary-on-dark)',
+                        ink: 'var(--color-ink)',
+                        body: 'var(--color-body)',
+                        muted: 'var(--color-body-muted)',
+                        canvas: 'var(--color-canvas)',
+                        parchment: 'var(--color-canvas-parchment)',
+                        surface: 'var(--color-surface)',
+                        pearl: 'var(--color-surface-pearl)',
+                        divider: 'var(--color-divider)',
+                        'divider-soft': 'var(--color-divider-soft)',
+                        success: 'var(--color-success)',
+                        danger: 'var(--color-danger)'
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -43,7 +44,7 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Inline Theme Script to prevent flash of incorrect theme -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('ai_flashcard_theme_v3');
             if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
@@ -53,59 +54,88 @@
         })();
     </script>
 </head>
+
 <body class="bg-canvas text-body antialiased min-h-screen flex flex-col">
 
     <!-- Global Navigation Bar -->
-    <nav class="glass fixed top-0 w-full z-50 px-6 py-4 flex flex-col md:flex-row justify-between items-center transition-all duration-300 gap-4 md:gap-0">
-        <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-            <div class="flex items-center gap-2 font-semibold text-lg tracking-tight cursor-pointer text-ink" id="nav-logo">
-                <i class="ph ph-brain text-2xl text-primary"></i>
-                <span>AI Flashcard Hub</span>
+    <nav
+        class="glass fixed top-0 w-full z-50 px-6 py-4 nav-safe-padding flex flex-col md:flex-row justify-between items-center transition-all duration-300 gap-4 md:gap-0">
+        <div class="flex flex-row items-center justify-between gap-4 w-full md:w-auto">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 font-semibold text-lg tracking-tight cursor-pointer text-ink"
+                    id="nav-logo">
+                    <i class="ph ph-brain text-2xl text-primary"></i>
+                    <span>AI Flashcard Hub</span>
+                </div>
+
+                <!-- Breadcrumbs (Hidden on Home) -->
+                <div id="breadcrumbs"
+                    class="hidden items-center gap-2 text-sm text-muted bg-surface px-3 py-1.5 rounded-full border border-divider">
+                    <button id="bc-home" class="hover:text-ink transition-colors"><i class="ph ph-house"></i></button>
+                    <i class="ph ph-caret-right text-xs"></i>
+                    <button id="bc-level" class="hover:text-ink transition-colors font-medium">Level</button>
+                    <i class="ph ph-caret-right text-xs hidden" id="bc-sep-topic"></i>
+                    <span id="bc-topic"
+                        class="text-primary font-semibold hidden truncate max-w-[150px] md:max-w-[300px]">Topic</span>
+                </div>
             </div>
-            
-            <!-- Breadcrumbs (Hidden on Home) -->
-            <div id="breadcrumbs" class="hidden items-center gap-2 text-sm text-muted bg-surface px-3 py-1.5 rounded-full border border-divider">
-                <button id="bc-home" class="hover:text-ink transition-colors"><i class="ph ph-house"></i></button>
-                <i class="ph ph-caret-right text-xs"></i>
-                <button id="bc-level" class="hover:text-ink transition-colors font-medium">Level</button>
-                <i class="ph ph-caret-right text-xs hidden" id="bc-sep-topic"></i>
-                <span id="bc-topic" class="text-primary font-semibold hidden truncate max-w-[150px] md:max-w-[300px]">Topic</span>
-            </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button id="mobile-menu-btn"
+                class="md:hidden text-ink p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-divider-soft focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-menu">
+                <i class="ph ph-list text-2xl" id="mobile-menu-icon"></i>
+            </button>
         </div>
 
         <!-- Mode Tabs (Hidden until Topic is selected) -->
         <div class="hidden bg-surface p-1 rounded-full border border-divider" id="nav-tabs">
-            <button data-target="flashcards" class="nav-tab active px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
+            <button data-target="flashcards"
+                class="nav-tab active px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-cards"></i> Flashcards
             </button>
-            <button data-target="quiz" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
+            <button data-target="quiz"
+                class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-question"></i> Quiz
             </button>
-            <button data-target="glossary" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
+            <button data-target="glossary"
+                class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-book-open-text"></i> Glossary
             </button>
         </div>
 
-        <div class="flex items-center justify-between w-full md:w-auto gap-4">
-            <!-- Mobile nav container (scrollable if needed) -->
-            <div class="flex items-center gap-4 text-sm font-medium overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-grow justify-center md:justify-end">
-                <button id="nav-home-btn" class="hover:text-primary transition-colors text-ink whitespace-nowrap">Home</button>
-                <button id="nav-customize-btn" class="hover:text-primary transition-colors text-muted whitespace-nowrap">Customize</button>
-                <button id="nav-profile-btn" class="hover:text-primary transition-colors text-muted whitespace-nowrap">Profile</button>
-                <a href="https://github.com/vedp9/ai-flashcards-hub" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors text-muted flex items-center gap-1 whitespace-nowrap" title="GitHub Repository">
+        <div class="flex items-center gap-2">
+            <!-- Desktop Nav / Mobile slide-out -->
+            <div id="nav-menu"
+                class="hidden md:flex flex-col md:flex-row absolute md:static top-full left-0 w-full md:w-auto bg-surface md:bg-transparent border-b md:border-none border-divider shadow-lg md:shadow-none items-start md:items-center gap-4 text-base md:text-sm font-medium p-6 md:p-0 z-40 max-h-[80vh] overflow-y-auto md:overflow-visible">
+                <button id="nav-home-btn"
+                    class="hover:text-primary transition-colors text-ink whitespace-nowrap w-full md:w-auto text-left py-2 md:py-0 focus:outline-none focus:text-primary">Home</button>
+                <button id="nav-customize-btn"
+                    class="hover:text-primary transition-colors text-muted whitespace-nowrap w-full md:w-auto text-left py-2 md:py-0 focus:outline-none focus:text-primary">Customize</button>
+                <button id="nav-profile-btn"
+                    class="hover:text-primary transition-colors text-muted whitespace-nowrap w-full md:w-auto text-left py-2 md:py-0 focus:outline-none focus:text-primary">Profile</button>
+                <a href="https://github.com/vedp9/ai-flashcards-hub" target="_blank" rel="noopener noreferrer"
+                    class="hover:text-primary transition-colors text-muted flex items-center gap-1 whitespace-nowrap w-full md:w-auto text-left py-2 md:py-0 focus:outline-none focus:text-primary"
+                    title="GitHub Repository">
                     <i class="ph ph-github-logo text-lg"></i> GitHub
                 </a>
+
+                <!-- Divider for Mobile -->
+                <div class="w-full h-px bg-divider md:hidden my-2"></div>
+
+                <!-- Theme Toggle (Inside Menu on Mobile, Inline on Desktop) -->
+                <button id="theme-toggle"
+                    class="hover:text-primary transition-colors text-muted flex items-center gap-2 whitespace-nowrap w-full md:w-auto text-left py-2 min-h-[44px] md:py-0 focus:outline-none focus:text-primary md:p-2 md:rounded-full md:hover:bg-divider-soft">
+                    <i class="ph ph-moon text-xl" id="theme-icon"></i> <span class="md:hidden">Appearance</span>
+                </button>
             </div>
-            
-            <button id="theme-toggle" class="text-muted hover:text-ink transition-colors p-2 rounded-full hover:bg-divider-soft flex-shrink-0">
-                <i class="ph ph-moon text-xl" id="theme-icon"></i>
-            </button>
+
         </div>
     </nav>
 
     <!-- Main Content Area -->
-    <main class="flex-grow px-4 md:px-8 pt-32 pb-24 max-w-6xl mx-auto w-full flex flex-col relative">
-        
+    <main class="flex-grow px-4 md:px-8 pt-40 md:pt-32 pb-24 max-w-6xl mx-auto w-full flex flex-col relative">
+
         <!-- STEP 1: DIFFICULTY SCREEN (HOME) -->
         <section id="view-difficulty" class="view-section block flex-grow flex flex-col justify-center">
             <div class="text-center mb-16 reveal-item is-visible">
@@ -116,34 +146,48 @@
                     Select your starting level.
                 </p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto w-full reveal-item is-visible">
                 <!-- Easy -->
                 <button data-difficulty="Easy" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
-                    <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mb-6 text-success">
+                    <div
+                        class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mb-6 text-success">
                         <i class="ph-fill ph-leaf text-2xl"></i>
                     </div>
                     <h2 class="apple-title-md mb-2 text-ink">Easy</h2>
-                    <p class="text-muted text-sm leading-relaxed">Fundamentals, basic definitions, career psychology, high-level business logic, and introductory concepts.</p>
+                    <p class="text-muted text-sm leading-relaxed">Fundamentals, basic definitions, career psychology,
+                        high-level business logic, and introductory concepts.</p>
                 </button>
-                
+
                 <!-- Medium -->
-                <button data-difficulty="Medium" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
-                    <div class="w-12 h-12 rounded-full text-yellow-500 bg-yellow-500/10 flex items-center justify-center mb-6">
+                <button data-difficulty="Medium"
+                    class="difficulty-card text-left apple-card apple-card-hover p-8 group">
+                    <div
+                        class="w-12 h-12 rounded-full text-yellow-500 bg-yellow-500/10 flex items-center justify-center mb-6">
                         <i class="ph-fill ph-lightning text-2xl"></i>
                     </div>
                     <h2 class="apple-title-md mb-2 text-ink">Medium</h2>
-                    <p class="text-muted text-sm leading-relaxed">System design, architecture patterns, standard ML algorithms, data engineering pipelines, and MLOps.</p>
+                    <p class="text-muted text-sm leading-relaxed">System design, architecture patterns, standard ML
+                        algorithms, data engineering pipelines, and MLOps.</p>
                 </button>
-                
+
                 <!-- Hard -->
                 <button data-difficulty="Hard" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
                     <div class="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center mb-6 text-danger">
                         <i class="ph-fill ph-fire text-2xl"></i>
                     </div>
                     <h2 class="apple-title-md mb-2 text-ink">Hard</h2>
-                    <p class="text-muted text-sm leading-relaxed">Transformer internals, Calculus, Deep Learning math, advanced Reinforcement Learning, and complex probability.</p>
+                    <p class="text-muted text-sm leading-relaxed">Transformer internals, Calculus, Deep Learning math,
+                        advanced Reinforcement Learning, and complex probability.</p>
                 </button>
+            </div>
+
+            <!-- Recommended For You -->
+            <div class="mt-16 reveal-item">
+                <h2 class="apple-title-md mb-6 text-ink">Recommended for you</h2>
+                <div id="recommendations-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Populated by JS -->
+                </div>
             </div>
         </section>
 
@@ -156,7 +200,7 @@
                         <p class="text-muted text-lg">Choose a specific category to study or review all.</p>
                     </div>
                 </div>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="topics-grid">
                     <!-- Populated via JS -->
                 </div>
@@ -168,10 +212,12 @@
             <div class="reveal-item">
                 <div class="text-center mb-10">
                     <h2 class="apple-title-lg mb-2 text-ink">Create Flashcards</h2>
-                    <p class="text-muted text-lg">Upload up to 20 files (.pdf, .html, .txt) to generate your custom collection.</p>
+                    <p class="text-muted text-lg">Upload up to 20 files (.pdf, .html, .txt) to generate your custom
+                        collection.</p>
                 </div>
-                
-                <div class="apple-card p-10 text-center mb-8 border-dashed border-2 cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center min-h-[200px]" id="upload-dropzone">
+
+                <div class="apple-card p-10 text-center mb-8 border-dashed border-2 cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center min-h-[200px]"
+                    id="upload-dropzone">
                     <i class="ph-fill ph-upload-simple text-4xl text-primary mb-4"></i>
                     <p class="apple-body-strong text-ink mb-2">Click to Upload or Drag & Drop</p>
                     <p class="text-muted text-sm">Supported: PDF, HTML, TXT (Max 20 files)</p>
@@ -184,7 +230,8 @@
 
                 <div class="flex justify-between items-center bg-surface-pearl p-6 rounded-2xl border border-divider">
                     <span id="upload-counter" class="text-muted text-sm font-medium">0 / 20 files uploaded</span>
-                    <button id="btn-generate-flashcards" class="apple-btn-primary opacity-50 cursor-not-allowed" disabled>
+                    <button id="btn-generate-flashcards" class="apple-btn-primary opacity-50 cursor-not-allowed"
+                        disabled>
                         <i class="ph-fill ph-magic-wand"></i> Generate Flashcards
                     </button>
                 </div>
@@ -199,34 +246,71 @@
                         <h2 class="apple-title-lg text-ink">My Flashcards</h2>
                         <p class="text-muted text-lg">Your locally saved custom collections.</p>
                     </div>
-                    <button id="btn-profile-create" class="apple-btn-utility"><i class="ph ph-plus"></i> New Collection</button>
+                    <button id="btn-profile-create" class="apple-btn-utility"><i class="ph ph-plus"></i> New
+                    </button>
                 </div>
-                
+
+                <div id="need-review-section"
+                    class="mb-10 apple-card p-6 flex flex-col md:flex-row justify-between items-center bg-danger/5 border-danger/20 hidden">
+                    <div>
+                        <h3 class="apple-title-md text-danger mb-1 flex items-center gap-2"><i
+                                class="ph-fill ph-warning-circle"></i> Need Review</h3>
+                        <p class="text-danger/80 text-sm">You have <span id="need-review-count"
+                                class="font-bold">0</span> cards to review.</p>
+                    </div>
+                    <button id="btn-start-review"
+                        class="apple-btn-primary !bg-danger hover:!bg-danger/90 mt-4 md:mt-0 shadow-sm border border-danger/20 text-white">Start
+                        Review</button>
+                </div>
+
                 <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Populated via JS -->
                 </div>
-                
+
                 <div id="empty-profile-state" class="text-center py-20 hidden apple-card">
                     <i class="ph ph-books text-6xl text-muted mb-4 opacity-50"></i>
                     <h3 class="apple-title-md text-ink mb-2">No collections yet</h3>
                     <p class="text-muted mb-6">You haven't generated any custom flashcards.</p>
                     <button id="btn-empty-create" class="apple-btn-primary">Create Flashcards</button>
                 </div>
+
+                <!-- NOTES SECTION -->
+                <div class="mt-16 mb-6 flex justify-between items-end">
+                    <div>
+                        <h2 class="apple-title-lg text-ink">My Notes</h2>
+                        <p class="text-muted">Personal thoughts and concepts to remember.</p>
+                    </div>
+                    <button id="btn-create-note" class="apple-btn-utility"><i class="ph ph-plus"></i> New Note</button>
+                </div>
+
+                <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                    <!-- Notes populated via JS -->
+                </div>
+
+                <div id="empty-notes-state" class="text-center py-12 hidden apple-card border-dashed">
+                    <i class="ph ph-note-pencil text-4xl text-muted mb-3 opacity-50"></i>
+                    <p class="text-muted">You haven't written any notes yet.</p>
+                </div>
             </div>
         </section>
 
         <!-- STEP 3: MODES -->
-        
+
         <!-- FLASHCARDS VIEW -->
         <section id="view-flashcards" class="view-section hidden">
+            <!-- Reminder -->
+            <p class="text-center text-sm text-muted mb-4 opacity-80">Flashcards are designed for revision. Review the
+                original material for deeper understanding.</p>
+
             <!-- Global Progress -->
-            <div class="w-full max-w-2xl mx-auto apple-card p-4 mb-10 reveal-item">
+            <div class="w-full max-w-2xl mx-auto apple-card p-4 mb-6 reveal-item">
                 <div class="flex justify-between text-sm mb-2 text-muted">
                     <span>Topic Progress</span>
                     <span id="progress-text" class="font-medium text-ink">0 / 0 (0%)</span>
                 </div>
                 <div class="w-full h-2 bg-divider-soft rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-primary transition-all duration-500" style="width: 0%"></div>
+                    <div id="progress-bar" class="h-full bg-primary transition-all duration-500" style="width: 0%">
+                    </div>
                 </div>
             </div>
 
@@ -236,20 +320,32 @@
                     <div class="flip-card-inner">
                         <!-- Front -->
                         <div class="flip-card-front group-hover:border-primary">
-                            <span id="card-category" class="px-3 py-1 bg-surface-pearl rounded-full text-xs text-muted font-medium tracking-wide mb-6 uppercase text-center block max-w-full truncate border border-divider"></span>
-                            <h2 id="card-word" class="apple-title-lg mb-4 text-primary">Concept goes here</h2>
-                            <p id="card-simple-def" class="text-xl text-ink font-medium mb-6">Simple definition goes here</p>
-                            <p class="text-sm text-muted mt-auto flex items-center gap-1 opacity-60">
-                                <i class="ph ph-arrows-left-right"></i> Click or press Space to flip
+                            <span id="card-category"
+                                class="px-3 py-1 bg-surface-pearl rounded-full text-xs text-muted font-medium tracking-wide mb-auto mt-2 uppercase text-center block max-w-full truncate border border-divider"></span>
+                            <h2 id="card-word"
+                                class="apple-title-hero text-ink text-center px-4 uppercase tracking-tight break-words overflow-wrap-anywhere">CONCEPT</h2>
+                            <p class="text-sm text-muted mt-auto mb-4 flex items-center gap-1 opacity-60">
+                                <i class="ph ph-hand-tap"></i> Tap to reveal
                             </p>
                         </div>
                         <!-- Back -->
-                        <div class="flip-card-back relative">
-                            <h3 class="text-sm font-semibold text-primary tracking-wider uppercase mb-4">Real-World Scenario / Trade-off</h3>
-                            <div class="bg-surface-pearl border-l-4 border-primary p-5 rounded-r-lg w-full text-left overflow-y-auto scrollbar-thin mb-4 flex-grow">
-                                <p id="card-scenario" class="text-lg font-normal leading-relaxed text-ink"></p>
+                        <div
+                            class="flip-card-back relative text-left items-start justify-start overflow-y-auto scrollbar-thin p-8">
+                            <h2 id="card-word-back" class="apple-title-md text-ink mb-6 uppercase tracking-tight break-words overflow-wrap-anywhere">
+                                CONCEPT</h2>
+
+                            <h3 class="text-xs font-semibold text-primary tracking-wider uppercase mb-2">Simple
+                                Definition</h3>
+                            <p id="card-simple-def" class="text-lg text-ink font-medium mb-6 leading-relaxed break-words">Simple
+                                definition goes here</p>
+
+                            <h3 class="text-xs font-semibold text-primary tracking-wider uppercase mb-2">Real-World
+                                Scenario</h3>
+                            <div class="bg-surface-pearl border-l-4 border-primary p-4 rounded-r-lg w-full mb-6">
+                                <p id="card-scenario" class="text-base font-normal leading-relaxed text-ink break-words"></p>
                             </div>
-                            <div class="mt-auto pt-2 flex items-center justify-between w-full">
+
+                            <div class="mt-auto flex items-center justify-between w-full border-t border-divider pt-4">
                                 <div class="flex items-center gap-2 text-xs text-muted">
                                     <i class="ph ph-books"></i> <span id="card-source">Source</span>
                                 </div>
@@ -263,29 +359,34 @@
             <div class="flex flex-col items-center gap-8 reveal-item">
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-4 w-full max-w-md justify-center">
-                    <button id="btn-review" class="flex-1 py-3 px-6 rounded-full bg-danger/10 text-danger hover:bg-danger/20 font-medium flex items-center justify-center gap-2 border border-danger/20 transition-colors">
+                    <button id="btn-review"
+                        class="flex-1 py-3 px-6 rounded-full bg-danger/10 text-danger hover:bg-danger/20 font-medium flex items-center justify-center gap-2 border border-danger/20 transition-colors">
                         <i class="ph-fill ph-x-circle text-lg"></i> Need Review
                     </button>
-                    <button id="btn-mastered" class="flex-1 py-3 px-6 rounded-full bg-success/10 text-success hover:bg-success/20 font-medium flex items-center justify-center gap-2 border border-success/20 transition-colors">
+                    <button id="btn-mastered"
+                        class="flex-1 py-3 px-6 rounded-full bg-success/10 text-success hover:bg-success/20 font-medium flex items-center justify-center gap-2 border border-success/20 transition-colors">
                         <i class="ph-fill ph-check-circle text-lg"></i> Got It!
                     </button>
                 </div>
                 <!-- Navigation -->
                 <div class="flex items-center gap-8 text-muted">
-                    <button id="btn-prev" class="hover:text-ink flex items-center gap-1 p-2 font-medium"><i class="ph ph-arrow-left text-xl"></i> Prev</button>
+                    <button id="btn-prev" class="hover:text-ink flex items-center justify-center min-h-[44px] gap-1 p-2 font-medium"><i
+                            class="ph ph-arrow-left text-xl"></i> Prev</button>
                     <span id="card-counter" class="text-sm font-mono tracking-wider">1 / 10</span>
-                    <button id="btn-next" class="hover:text-ink flex items-center gap-1 p-2 font-medium">Next <i class="ph ph-arrow-right text-xl"></i></button>
+                    <button id="btn-next" class="hover:text-ink flex items-center justify-center min-h-[44px] gap-1 p-2 font-medium">Next <i
+                            class="ph ph-arrow-right text-xl"></i></button>
                 </div>
-                <div class="flex items-center gap-4 mt-2">
-                    <button id="btn-edit-card" class="text-sm text-muted hover:text-ink flex items-center gap-1 hidden">
+                <div class="flex flex-wrap items-center justify-center gap-4 mt-2">
+                    <button id="btn-edit-card" class="text-sm text-muted hover:text-ink flex items-center justify-center min-h-[44px] gap-1 hidden">
                         <i class="ph ph-pencil-simple"></i> Edit Card
                     </button>
                     <span class="text-muted text-xs hidden" id="sep-edit">|</span>
-                    <button id="btn-shuffle" class="text-sm text-muted hover:text-ink flex items-center gap-1">
+                    <button id="btn-shuffle" class="text-sm text-muted hover:text-ink flex items-center justify-center min-h-[44px] gap-1">
                         <i class="ph ph-shuffle"></i> Shuffle Queue
                     </button>
-                    <span class="text-muted text-xs">|</span>
-                    <button id="reset-progress-btn" class="text-sm text-danger hover:opacity-80 flex items-center gap-1">
+                    <span class="text-muted text-xs hidden md:inline">|</span>
+                    <button id="reset-progress-btn"
+                        class="text-sm text-danger hover:opacity-80 flex items-center justify-center min-h-[44px] gap-1">
                         <i class="ph ph-arrow-counter-clockwise"></i> Reset Progress
                     </button>
                 </div>
@@ -297,19 +398,19 @@
             <div class="reveal-item">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="apple-title-md text-ink">Knowledge Check</h2>
-                    <div class="flex items-center gap-2 bg-surface px-4 py-2 rounded-full border border-divider">
-                        <i class="ph-fill ph-flame text-orange-500"></i>
-                        <span class="text-sm text-muted">Streak: <span id="quiz-streak" class="text-ink font-bold">0</span></span>
-                    </div>
                 </div>
-                
+
                 <div class="apple-card-elevated p-8">
                     <div class="flex justify-between items-center mb-6">
-                        <span id="quiz-category" class="text-xs text-primary font-medium uppercase tracking-wider block">Category</span>
-                        <span class="text-xs text-muted bg-surface-pearl px-2 py-1 rounded-md border border-divider">Identify the concept</span>
+                        <span id="quiz-category"
+                            class="text-xs text-primary font-medium uppercase tracking-wider block">Category</span>
+                        <span
+                            class="text-xs text-muted bg-surface-pearl px-2 py-1 rounded-md border border-divider">Identify
+                            the concept</span>
                     </div>
-                    <h3 id="quiz-question" class="text-xl font-medium mb-10 leading-relaxed text-ink">Loading prompt...</h3>
-                    
+                    <h3 id="quiz-question" class="text-xl font-medium mb-10 leading-relaxed text-ink">Loading prompt...
+                    </h3>
+
                     <div id="quiz-options" class="flex flex-col gap-4">
                         <!-- Options populated via JS -->
                     </div>
@@ -332,13 +433,15 @@
             <div class="reveal-item">
                 <!-- Dropdown Filters -->
                 <div class="flex flex-col md:flex-row gap-4 mb-8">
-                    <select id="glossary-difficulty-filter" class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
+                    <select id="glossary-difficulty-filter"
+                        class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
                         <option value="All">All Difficulties</option>
                         <option value="Easy">Easy</option>
                         <option value="Medium">Medium</option>
                         <option value="Hard">Hard</option>
                     </select>
-                    <select id="glossary-category-filter" class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
+                    <select id="glossary-category-filter"
+                        class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
                         <!-- Populated via JS -->
                         <option value="All">All Categories</option>
                     </select>
@@ -346,8 +449,8 @@
 
                 <div class="mb-10 relative">
                     <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xl"></i>
-                    <input type="text" id="glossary-search" placeholder="Search concepts, definitions, or scenarios..." 
-                           class="w-full bg-surface border border-divider rounded-full py-4 pl-12 pr-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm">
+                    <input type="text" id="glossary-search" placeholder="Search concepts, definitions, or scenarios..."
+                        class="w-full bg-surface border border-divider rounded-full py-4 pl-12 pr-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm">
                 </div>
 
                 <div id="glossary-list" class="flex flex-col gap-4">
@@ -359,56 +462,155 @@
     </main>
 
     <!-- Floating Top Anchor -->
-    <a href="#" id="top-anchor" class="fixed bottom-6 left-6 w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-colors z-50">
+    <a href="#" id="top-anchor"
+        class="fixed bottom-6 left-6 w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-colors z-50">
         <i class="ph ph-arrow-up text-xl"></i>
     </a>
 
     <!-- MODALS & OVERLAYS -->
 
     <!-- API KEY MODAL -->
-    <div id="api-key-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="apple-card-elevated max-w-md w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform" id="api-key-modal-content">
-            <button id="btn-close-modal" class="absolute top-4 right-4 text-muted hover:text-ink"><i class="ph ph-x text-xl"></i></button>
+    <div id="api-key-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-md w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform max-h-[90dvh] overflow-y-auto"
+            id="api-key-modal-content">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-muted hover:text-ink min-h-[44px] min-w-[44px] flex items-center justify-center"><i
+                    class="ph ph-x text-xl"></i></button>
             <i class="ph-fill ph-key text-3xl text-primary mb-4"></i>
             <h3 class="apple-title-md text-ink mb-2">API Key Required</h3>
-            <p class="text-muted text-sm mb-6 leading-relaxed">To generate custom flashcards locally, please provide your Google Gemini API Key. It will be stored securely in your browser's local storage and never sent to any external server.</p>
-            <input type="password" id="api-key-input" placeholder="Enter Gemini API Key..." class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm mb-6">
+            <p class="text-muted text-sm mb-6 leading-relaxed">To generate custom flashcards locally, please provide
+                your Google Gemini API Key. It will be stored securely in your browser's local storage and never sent to
+                any external server.</p>
+            <input type="password" id="api-key-input" placeholder="Enter Gemini API Key..."
+                class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm mb-6">
             <button id="btn-save-key" class="w-full apple-btn-primary">Save & Continue</button>
-            <p class="text-center mt-4"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-primary text-sm hover:underline">Get a free Gemini API Key</a></p>
+            <p class="text-center mt-4"><a href="https://aistudio.google.com/app/apikey" target="_blank"
+                    class="text-primary text-sm hover:underline">Get a free Gemini API Key</a></p>
+        </div>
+    </div>
+
+    <!-- DELETE COLLECTION CONFIRMATION MODAL -->
+    <div id="delete-collection-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-sm w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform max-h-[90dvh] overflow-y-auto"
+            id="delete-collection-modal-content">
+            <h3 class="apple-title-md text-ink mb-2">Delete this collection?</h3>
+            <p class="text-muted text-sm mb-6 leading-relaxed">This will permanently remove the saved flashcards and
+                associated local data.</p>
+            <div class="flex justify-end gap-3">
+                <button id="btn-cancel-delete-col" class="apple-btn-utility">Cancel</button>
+                <button id="btn-confirm-delete-col"
+                    class="apple-btn-primary !bg-danger hover:!bg-danger/90 border-danger/20 text-white">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTE EDITOR MODAL -->
+    <div id="note-editor-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-lg w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform max-h-[90dvh] overflow-y-auto"
+            id="note-editor-modal-content">
+            <button id="btn-close-note-editor" class="absolute top-4 right-4 text-muted hover:text-ink min-h-[44px] min-w-[44px] flex items-center justify-center"><i
+                    class="ph ph-x text-xl"></i></button>
+            <h3 class="apple-body-strong text-ink mb-6" id="note-editor-title">New Note</h3>
+
+            <input type="text" id="note-input-title" placeholder="Note Title"
+                class="w-full bg-transparent border-b border-divider py-2 px-1 text-lg text-ink font-semibold focus:outline-none focus:border-primary transition-colors mb-4 placeholder-muted/50">
+
+            <textarea id="note-input-content" rows="6" placeholder="Write your thoughts here..."
+                class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4 resize-none leading-relaxed"></textarea>
+
+            <input type="text" id="note-input-topic" placeholder="Topic (optional)"
+                class="w-full bg-surface-pearl border border-divider rounded-lg py-2 px-3 text-sm text-ink focus:outline-none focus:border-primary transition-colors mb-6">
+
+            <div class="flex justify-end">
+                <button id="btn-save-note" class="apple-btn-primary">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTE VIEWER MODAL -->
+    <div id="note-viewer-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-lg w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform max-h-[90dvh] overflow-y-auto"
+            id="note-viewer-modal-content">
+            <button id="btn-close-note-viewer" class="absolute top-4 right-4 text-muted hover:text-ink min-h-[44px] min-w-[44px] flex items-center justify-center"><i
+                    class="ph ph-x text-xl"></i></button>
+
+            <div class="mb-6">
+                <span id="viewer-note-topic"
+                    class="inline-block px-3 py-1 bg-surface-pearl rounded-full text-xs text-muted font-medium tracking-wide mb-3 border border-divider hidden"></span>
+                <h3 id="viewer-note-title" class="apple-title-lg text-ink mb-2"></h3>
+                <p id="viewer-note-date" class="text-xs text-muted"></p>
+            </div>
+
+            <div class="prose prose-sm dark:prose-invert max-w-none text-ink mb-8 whitespace-pre-wrap leading-relaxed break-words"
+                id="viewer-note-content"></div>
+
+            <div class="flex justify-between items-center pt-4 border-t border-divider">
+                <button id="btn-delete-note"
+                    class="apple-btn-utility text-danger border-danger/30 hover:bg-danger/10"><i
+                        class="ph ph-trash"></i> Delete</button>
+                <div class="flex gap-2">
+                    <button id="btn-share-note" class="apple-btn-utility"><i class="ph ph-share-network"></i>
+                        Share</button>
+                    <button id="btn-edit-note" class="apple-btn-primary"><i class="ph ph-pencil-simple"></i>
+                        Edit</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- EDIT CARD MODAL -->
-    <div id="edit-card-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="apple-card-elevated max-w-2xl w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform" id="edit-card-modal-content">
-            <button id="btn-close-edit" class="absolute top-4 right-4 text-muted hover:text-ink"><i class="ph ph-x text-xl"></i></button>
+    <div id="edit-card-modal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-2xl w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform max-h-[90dvh] overflow-y-auto"
+            id="edit-card-modal-content">
+            <button id="btn-close-edit" class="absolute top-4 right-4 text-muted hover:text-ink min-h-[44px] min-w-[44px] flex items-center justify-center"><i
+                    class="ph ph-x text-xl"></i></button>
             <h3 class="apple-body-strong text-ink mb-6">Edit Flashcard</h3>
-            
+
             <label class="block text-sm font-medium text-muted mb-2">Concept / Question</label>
-            <input type="text" id="edit-word" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4">
-            
+            <input type="text" id="edit-word"
+                class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4">
+
             <label class="block text-sm font-medium text-muted mb-2">Simple Definition</label>
-            <textarea id="edit-def" rows="2" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4"></textarea>
+            <textarea id="edit-def" rows="2"
+                class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4"></textarea>
 
             <label class="block text-sm font-medium text-muted mb-2">Real-World Scenario / Deep Answer</label>
-            <textarea id="edit-scenario" rows="3" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-6"></textarea>
+            <textarea id="edit-scenario" rows="3"
+                class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-6"></textarea>
 
             <div class="flex justify-between items-center mt-4">
-                <button id="btn-delete-card" class="apple-btn-utility text-danger border-danger/30 hover:bg-danger/10"><i class="ph ph-trash"></i> Delete Card</button>
+                <button id="btn-delete-card"
+                    class="apple-btn-utility text-danger border-danger/30 hover:bg-danger/10"><i
+                        class="ph ph-trash"></i> Delete Card</button>
                 <button id="btn-save-edit" class="apple-btn-primary">Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- LOADING OVERLAY -->
-    <div id="loading-overlay" class="fixed inset-0 bg-canvas/80 backdrop-blur-md z-[200] hidden flex flex-col items-center justify-center">
-        <i class="ph ph-spinner-gap text-5xl text-primary animate-spin mb-4"></i>
-        <h3 class="apple-body-strong text-ink" id="loading-text">Generating your flashcards...</h3>
-        <p class="text-muted text-sm mt-2 max-w-sm text-center">This takes a moment depending on the size of your uploaded documents.</p>
+    <div id="loading-overlay"
+        class="fixed inset-0 bg-canvas/80 backdrop-blur-md z-[200] hidden flex flex-col items-center justify-center p-6">
+        <i class="ph ph-spinner-gap text-5xl text-primary animate-spin mb-6"></i>
+        <h3 class="apple-body-strong text-ink text-center mb-6" id="loading-text">Generating your flashcards...</h3>
+
+        <div class="max-w-md w-full relative h-24 flex items-center justify-center">
+            <p id="loading-quote-text"
+                class="text-lg text-ink font-medium text-center italic transition-opacity duration-500 opacity-0 absolute w-full px-4">
+            </p>
+        </div>
+
+        <p class="text-muted text-sm mt-8 max-w-sm text-center">This takes a moment depending on the size of your
+            uploaded documents.</p>
     </div>
 
     <!-- Scripts -->
+    <script src="quotes.js"></script>
     <script src="data.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

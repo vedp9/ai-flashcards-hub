@@ -313,3 +313,12 @@ html.dark .text-primary { color: var(--color-primary-on-dark); }
   transform: translateY(-2px);
   border-color: var(--color-primary);
 }
+
+/* Mobile Safe Area for Top Navigation */
+@supports(padding: max(0px)) {
+  .nav-safe-padding {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
