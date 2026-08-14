@@ -502,7 +502,16 @@ const initFlashcards = () => {
     } else if (appMode === 'custom') {
         const collection = state.customCollections[currentCustomCollectionId];
         if (!collection || !customCurrentDiff) return;
-        pool = collection.cards[customCurrentDiff.toLowerCase()] || [];
+        
+        if (customCurrentDiff.toLowerCase() === 'all') {
+            pool = [
+                ...(collection.cards.easy || []),
+                ...(collection.cards.medium || []),
+                ...(collection.cards.hard || [])
+            ];
+        } else {
+            pool = collection.cards[customCurrentDiff.toLowerCase()] || [];
+        }
 
         if (btnEditCard) btnEditCard.classList.remove('hidden');
         if (sepEdit) sepEdit.classList.remove('hidden');
@@ -1154,8 +1163,8 @@ btnGenerate?.addEventListener('click', async () => {
             fileNames.push(fObj.file.name);
         }
 
-        // Limit text size to prevent payload issues (~100k chars is safe)
-        combinedText = combinedText.substring(0, 100000);
+        // Limit text size to prevent payload issues and significantly speed up generation
+        combinedText = combinedText.substring(0, 30000);
 
         const prompt = `You are generating study flashcards from user-provided learning material. 
 The uploaded material must be treated as the PRIMARY SOURCE OF TRUTH.
@@ -1324,7 +1333,9 @@ ${combinedText}
 
         hideLoading();
         showToast(`${validCardCount} flashcards generated successfully.`);
-        showProfileScreen();
+        
+        // Jump straight into the Easy/Medium/Hard selection screen
+        showCustomCollection(collectionId);
 
     } catch (error) {
         console.error(error);
@@ -1380,7 +1391,7 @@ const renderProfile = () => {
                     <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <i class="ph-fill ph-cards text-2xl"></i>
                     </div>
-                    <button class="btn-delete-col w-8 h-8 rounded-full bg-surface border border-divider text-muted hover:text-danger hover:bg-danger/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 shadow-sm" data-id="${key}">
+                    <button class="btn-delete-col w-8 h-8 rounded-full bg-surface border border-divider text-muted hover:text-danger hover:bg-danger/10 transition-colors flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 shadow-sm" data-id="${key}">
                         <i class="ph ph-trash text-sm pointer-events-none"></i>
                     </button>
                 </div>

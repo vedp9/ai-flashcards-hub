@@ -45,7 +45,7 @@
 - **Bring-Your-Own-Key (BYOK):** Users provide their own Gemini API key, which is stored locally in the browser. The client communicates directly with Gemini rather than using an AI Flashcards Hub backend. Includes exponential backoff and retry resilience.
 - **Structured Learning:** Flashcards are automatically grouped into Easy / Medium / Hard difficulty levels, and organized by inferred Topics and Subtopics.
 - **Local Library & Profile:** All custom flashcard collections (metadata and extracted text) are stored entirely locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. You can permanently delete custom collections at any time to scrub your local data.
-- **Spaced Repetition (Need Review):** Mark cards for review to have them resurface on a deterministic 1-day/3-day spaced schedule, or mark them as "Got It" to master them.
+- **Need Review:** Mark cards for review and access them immediately from your Profile's prioritized Need Review queue. Mark a card as Got It when you feel confident with it.
 - **Interactive Study Tools:** Edit cards on the fly, search the glossary, and receive personalized recommendations.
 - **Personal Notes:** A local-first note-taking system built right into your Profile to save thoughts, organize by topic, and natively share or export them.
 
