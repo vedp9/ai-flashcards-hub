@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/vedp9/ai-flashcards-hub/blob/main/favicon.png?raw=true" width="100" alt="AI Flashcards Hub Logo">
+  <img src="https://github.com/vedp9/ai-flashcards-hub/blob/main/assets/favicon.png?raw=true" width="100" alt="AI Flashcards Hub Logo">
   <h1>AI Flashcards Hub</h1>
   <p>An open-source AI-powered flashcard platform that turns your learning material into Easy, Medium, and Hard flashcards.</p>
 
