@@ -38,7 +38,7 @@
 - **Structured Learning:** Flashcards are automatically grouped into Easy / Medium / Hard difficulty levels, and organized by inferred Topics and Subtopics.
 - **Local Library & Profile:** All custom flashcard collections (metadata and extracted text) are stored entirely locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. You can permanently delete custom collections at any time to scrub your local data.
 - **Spaced Repetition (Need Review):** Mark cards for review to have them resurface on a deterministic 1-day/3-day spaced schedule, or mark them as "Got It" to master them.
-- **Interactive Study Tools:** Edit cards on the fly, take quizzes with explanations, search the glossary, and receive personalized recommendations.
+- **Interactive Study Tools:** Edit cards on the fly, search the glossary, and receive personalized recommendations.
 - **Personal Notes:** A local-first note-taking system built right into your Profile to save thoughts, organize by topic, and natively share or export them.
 
 ## 🎯 Why this project?

@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewDifficulty = document.getElementById('view-difficulty');
     const viewTopics = document.getElementById('view-topics');
     const viewFlashcards = document.getElementById('view-flashcards');
-    const viewQuiz = document.getElementById('view-quiz');
     const viewGlossary = document.getElementById('view-glossary');
     const viewCustomize = document.getElementById('view-customize');
     const viewProfile = document.getElementById('view-profile');
@@ -112,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             state.needReview = {};
             saveState();
             initFlashcards();
-            initQuiz();
         }
     });
 
@@ -124,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let customCurrentDiff = null;
 
     const hideAllViews = () => {
-        [viewDifficulty, viewTopics, viewFlashcards, viewQuiz, viewGlossary, viewCustomize, viewProfile].forEach(v => {
+        [viewDifficulty, viewTopics, viewFlashcards, viewGlossary, viewCustomize, viewProfile].forEach(v => {
             if (v) {
                 v.classList.add('hidden');
                 v.classList.remove('block');
@@ -345,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateGlobalProgress();
         initFlashcards();
-        initQuiz();
         initGlossaryFilters();
         renderGlossary();
         observeReveals();
@@ -673,87 +670,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ==========================================
-// QUIZ & GLOSSARY MODE (Built-in Only)
+// GLOSSARY MODE (Built-in Only)
 // ==========================================
-const quizCategoryEl = document.getElementById('quiz-category');
-const quizQuestionEl = document.getElementById('quiz-question');
-const quizOptionsContainer = document.getElementById('quiz-options');
-const quizFeedbackEl = document.getElementById('quiz-feedback');
-const quizNextBtn = document.getElementById('btn-quiz-next');
-
-let currentQuizCard = null;
-
-const initQuiz = () => {
-    if (appMode !== 'built-in' || !state.selectedDifficulty) return;
-
-    let pool = flashcardsData.filter(c => c.difficulty === state.selectedDifficulty);
-    if (state.selectedCategory && state.selectedCategory !== 'All') {
-        pool = pool.filter(c => c.category === state.selectedCategory);
-    }
-
-    if (pool.length === 0) return;
-
-    quizFeedbackEl.classList.add('hidden');
-    quizNextBtn.classList.add('hidden');
-    quizOptionsContainer.innerHTML = '';
-
-    currentQuizCard = pool[Math.floor(Math.random() * pool.length)];
-    quizCategoryEl.textContent = currentQuizCard.category;
-
-    const promptText = Math.random() > 0.5 ? currentQuizCard.simple_def : currentQuizCard.real_world_scenario;
-    quizQuestionEl.textContent = promptText;
-
-    const sameDifficultyCards = flashcardsData.filter(c => c.difficulty === state.selectedDifficulty);
-    const otherCards = sameDifficultyCards.filter(c => c.id !== currentQuizCard.id);
-    const distractors = otherCards.sort(() => Math.random() - 0.5).slice(0, 3).map(c => c.word);
-
-    const options = [...distractors, currentQuizCard.word].sort(() => Math.random() - 0.5);
-
-    options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left p-4 rounded-xl border border-divider bg-surface hover:bg-surface-pearl transition-colors text-lg md:text-xl font-bold text-primary';
-        btn.textContent = opt;
-        btn.addEventListener('click', () => handleQuizAnswer(btn, opt === currentQuizCard.word));
-        quizOptionsContainer.appendChild(btn);
-    });
-};
-
-const handleQuizAnswer = (selectedBtn, isCorrect) => {
-    Array.from(quizOptionsContainer.children).forEach(btn => {
-        btn.disabled = true;
-        btn.classList.remove('hover:bg-surface-pearl', 'cursor-pointer');
-        if (btn.textContent === currentQuizCard.word) {
-            btn.classList.add('border-success', 'bg-success/10');
-        }
-    });
-
-    quizFeedbackEl.classList.remove('hidden');
-    if (isCorrect) {
-        selectedBtn.classList.add('border-success', 'bg-success/10');
-        quizFeedbackEl.innerHTML = `<span class="text-success font-bold"><i class="ph-fill ph-check-circle"></i> Correct!</span> <div class="mt-2 text-ink"><strong>Explanation:</strong> ${currentQuizCard.simple_def} <br/> <span class="text-muted text-sm mt-1 block">${currentQuizCard.real_world_scenario || ''}</span></div>`;
-        quizFeedbackEl.className = 'mt-6 rounded-xl p-4 text-sm bg-success/10 border border-success/20 animate-fade-in block';
-    } else {
-        selectedBtn.classList.add('border-danger', 'bg-danger/10');
-        quizFeedbackEl.innerHTML = `<span class="text-danger font-bold"><i class="ph-fill ph-x-circle"></i> Incorrect.</span> The correct concept was <strong>${currentQuizCard.word}</strong>. <div class="mt-2 text-ink"><strong>Explanation:</strong> ${currentQuizCard.simple_def} <br/> <span class="text-muted text-sm mt-1 block">${currentQuizCard.real_world_scenario || ''}</span></div>`;
-        quizFeedbackEl.className = 'mt-6 rounded-xl p-4 text-sm bg-danger/10 border border-danger/20 animate-fade-in block';
-
-        // Push to Need Review queue
-        const now = Date.now();
-        const cardId = currentQuizCard.id || currentQuizCard.word; // Fallback to word if id is missing in custom
-        if (!state.needReview[cardId]) {
-            state.needReview[cardId] = { nextReviewDate: now + 24 * 60 * 60 * 1000, mistakeCount: 1 };
-        } else {
-            state.needReview[cardId].mistakeCount += 1;
-            // E.g., next review in 3 days if they failed again
-            state.needReview[cardId].nextReviewDate = now + 3 * 24 * 60 * 60 * 1000;
-        }
-    }
-
-    saveState();
-    quizNextBtn.classList.remove('hidden');
-};
-
-quizNextBtn?.addEventListener('click', initQuiz);
 
 // Glossary is built-in only
 const glossarySearchInput = document.getElementById('glossary-search');
