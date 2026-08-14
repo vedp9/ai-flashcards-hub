@@ -15,12 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let state;
+    let stateLoadFailed = false;
+    let initialRawState = null;
+    
     try {
-        const stored = localStorage.getItem(STATE_KEY);
-        if (stored) {
-            state = JSON.parse(stored);
+        initialRawState = localStorage.getItem(STATE_KEY);
+        console.log('[Persistence Debug] INIT: Raw localStorage string at boot:', initialRawState);
+        
+        if (initialRawState !== null && initialRawState !== undefined) {
+            state = JSON.parse(initialRawState);
             if (!state || typeof state !== 'object' || Array.isArray(state)) {
+                console.warn('[Persistence Debug] INIT: Parsed state is invalid type. Falling back to default. Parsed state was:', state);
                 state = { ...defaultState };
+                stateLoadFailed = true; // Mark as failed so we don't overwrite if it was a weird glitch
             } else {
                 // Merge with defaults to ensure no missing keys
                 state = { ...defaultState, ...state };
@@ -38,13 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof state.notes !== 'object' || Array.isArray(state.notes)) {
                     state.notes = {};
                 }
+                console.log('[Persistence Debug] INIT: Parse success. Final state object:', state);
             }
         } else {
+            console.log('[Persistence Debug] INIT: No state found in localStorage. Using defaultState.');
             state = { ...defaultState };
         }
     } catch (error) {
-        console.error('[Persistence] Error parsing state, falling back to default', error);
+        console.error('[Persistence Debug] INIT: Error parsing state, falling back to default. Error:', error);
         state = { ...defaultState };
+        stateLoadFailed = true; // Prevent accidental overwrite of corrupt data
     }
 
     if (state.streak !== undefined) delete state.streak;
@@ -57,7 +67,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const saveState = () => {
-        localStorage.setItem(STATE_KEY, JSON.stringify(state));
+        if (stateLoadFailed) {
+            console.error('[Persistence Debug] SAVE PREVENTED: stateLoadFailed is true. Refusing to overwrite localStorage with potentially empty state.');
+            return;
+        }
+        const jsonStr = JSON.stringify(state);
+        console.log('[Persistence Debug] SAVE: Writing to localStorage. String length:', jsonStr.length);
+        localStorage.setItem(STATE_KEY, jsonStr);
+    };
+    
+    // Temporary diagnostic for browser quit/tab close
+    window.addEventListener('beforeunload', () => {
+        const currentStored = localStorage.getItem(STATE_KEY);
+        console.log('[Persistence Debug] BEFOREUNLOAD: Current localStorage string length:', currentStored ? currentStored.length : 0);
+    });
         updateGlobalProgress();
     };
 
