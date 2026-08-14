@@ -94,7 +94,10 @@
                 class="nav-tab active px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-cards"></i> Flashcards
             </button>
-
+            <button data-target="quiz"
+                class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
+                <i class="ph ph-question"></i> Quiz
+            </button>
             <button data-target="glossary"
                 class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-book-open-text"></i> Glossary
@@ -390,6 +393,40 @@
             </div>
         </section>
 
+        <!-- QUIZ VIEW -->
+        <section id="view-quiz" class="view-section hidden max-w-2xl mx-auto w-full">
+            <div class="reveal-item">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="apple-title-md text-ink">Knowledge Check</h2>
+                </div>
+
+                <div class="apple-card-elevated p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <span id="quiz-category"
+                            class="text-xs text-primary font-medium uppercase tracking-wider block">Category</span>
+                        <span
+                            class="text-xs text-muted bg-surface-pearl px-2 py-1 rounded-md border border-divider">Identify
+                            the concept</span>
+                    </div>
+                    <h3 id="quiz-question" class="text-xl font-medium mb-10 leading-relaxed text-ink">Loading prompt...
+                    </h3>
+
+                    <div id="quiz-options" class="flex flex-col gap-4">
+                        <!-- Options populated via JS -->
+                    </div>
+
+                    <div id="quiz-feedback" class="mt-8 hidden rounded-xl p-4 text-sm animate-fade-in">
+                        <!-- Feedback populated via JS -->
+                    </div>
+
+                    <div class="mt-8 flex justify-end">
+                        <button id="btn-quiz-next" class="hidden apple-btn-primary">
+                            Next Question <i class="ph ph-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- GLOSSARY VIEW -->
         <section id="view-glossary" class="view-section hidden max-w-3xl mx-auto w-full">
