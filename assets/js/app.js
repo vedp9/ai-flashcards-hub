@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const jsonStr = JSON.stringify(state);
         console.log('[Persistence Debug] SAVE: Writing to localStorage. String length:', jsonStr.length);
         localStorage.setItem(STATE_KEY, jsonStr);
+        updateGlobalProgress();
     };
     
     // Temporary diagnostic for browser quit/tab close
@@ -81,8 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentStored = localStorage.getItem(STATE_KEY);
         console.log('[Persistence Debug] BEFOREUNLOAD: Current localStorage string length:', currentStored ? currentStored.length : 0);
     });
-        updateGlobalProgress();
-    };
 
     // ==========================================
     // TOAST NOTIFICATIONS
