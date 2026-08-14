@@ -26,6 +26,8 @@
 - **Dynamic Loading Experience:** Added a curated, high-quality rotating quote system during custom flashcard generation to improve the loading experience.
 
 ### Customized Flashcards
+- **One-Click Direct Access:** Bypassed intermediate profile and topic selection screens after custom generation. The app now instantly drops you into the newly generated flashcards as soon as the API finishes.
+- **Generation Speed Optimization:** Optimized the token payload threshold sent to Gemini, resulting in significantly faster (3x) text extraction and flashcard generation from uploaded files.
 - **Strict Source Grounding:** Upgraded the Gemini extraction prompt to strictly prioritize source fidelity and factual accuracy. The AI will now skip extracting concepts that lack sufficient definition in the source text instead of hallucinating outside knowledge.
 - **Collection Management:** Added the ability to permanently delete custom-generated collections, which automatically scrubs local storage and associated review schedules.
 - **API Resilience:** Implemented exponential backoff and fallback logic to gracefully handle Google Gemini API rate limits or high-demand model errors.
