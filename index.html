@@ -5,87 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Engineering & Systems Flashcard Hub</title>
     <meta name="description" content="Master AI Systems with essential concepts from first principles.">
+    <link rel="icon" type="image/png" href="favicon.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: 'var(--color-primary)',
+              'primary-on-dark': 'var(--color-primary-on-dark)',
+              ink: 'var(--color-ink)',
+              body: 'var(--color-body)',
+              muted: 'var(--color-body-muted)',
+              canvas: 'var(--color-canvas)',
+              parchment: 'var(--color-canvas-parchment)',
+              surface: 'var(--color-surface)',
+              pearl: 'var(--color-surface-pearl)',
+              divider: 'var(--color-divider)',
+              'divider-soft': 'var(--color-divider-soft)',
+              success: 'var(--color-success)',
+              danger: 'var(--color-danger)'
+            }
+          }
+        }
+      }
+    </script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- PDF.js for client-side parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
+    <!-- Inline Theme Script to prevent flash of incorrect theme -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('ai_flashcard_theme_v3');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-[#161618] text-white antialiased min-h-screen flex flex-col font-sans">
+<body class="bg-canvas text-body antialiased min-h-screen flex flex-col">
 
     <!-- Global Navigation Bar -->
     <nav class="glass fixed top-0 w-full z-50 px-6 py-4 flex flex-col md:flex-row justify-between items-center transition-all duration-300 gap-4 md:gap-0">
         <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-            <div class="flex items-center gap-2 font-semibold text-lg tracking-tight cursor-pointer" id="nav-logo">
-                <i class="ph ph-brain text-2xl text-[#0A84FF]"></i>
+            <div class="flex items-center gap-2 font-semibold text-lg tracking-tight cursor-pointer text-ink" id="nav-logo">
+                <i class="ph ph-brain text-2xl text-primary"></i>
                 <span>AI Flashcard Hub</span>
             </div>
             
             <!-- Breadcrumbs (Hidden on Home) -->
-            <div id="breadcrumbs" class="hidden items-center gap-2 text-sm text-[#a1a1a6] bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-                <button id="bc-home" class="hover:text-white transition-colors"><i class="ph ph-house"></i></button>
+            <div id="breadcrumbs" class="hidden items-center gap-2 text-sm text-muted bg-surface px-3 py-1.5 rounded-full border border-divider">
+                <button id="bc-home" class="hover:text-ink transition-colors"><i class="ph ph-house"></i></button>
                 <i class="ph ph-caret-right text-xs"></i>
-                <button id="bc-level" class="hover:text-white transition-colors font-medium">Level</button>
+                <button id="bc-level" class="hover:text-ink transition-colors font-medium">Level</button>
                 <i class="ph ph-caret-right text-xs hidden" id="bc-sep-topic"></i>
-                <span id="bc-topic" class="text-[#0A84FF] font-semibold hidden truncate max-w-[150px] md:max-w-[300px]">Topic</span>
+                <span id="bc-topic" class="text-primary font-semibold hidden truncate max-w-[150px] md:max-w-[300px]">Topic</span>
             </div>
         </div>
 
         <!-- Mode Tabs (Hidden until Topic is selected) -->
-        <div class="hidden bg-white/5 p-1 rounded-full border border-white/10" id="nav-tabs">
-            <button data-target="flashcards" class="nav-tab active px-4 py-1.5 rounded-full text-sm font-medium text-[#a1a1a6] hover:text-white transition-colors flex items-center gap-2">
+        <div class="hidden bg-surface p-1 rounded-full border border-divider" id="nav-tabs">
+            <button data-target="flashcards" class="nav-tab active px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-cards"></i> Flashcards
             </button>
-            <button data-target="quiz" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium text-[#a1a1a6] hover:text-white transition-colors flex items-center gap-2">
+            <button data-target="quiz" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-question"></i> Quiz
             </button>
-            <button data-target="glossary" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium text-[#a1a1a6] hover:text-white transition-colors flex items-center gap-2">
+            <button data-target="glossary" class="nav-tab px-4 py-1.5 rounded-full text-sm font-medium hover:text-ink transition-colors flex items-center gap-2">
                 <i class="ph ph-book-open-text"></i> Glossary
+            </button>
+        </div>
+
+        <div class="flex items-center justify-between w-full md:w-auto gap-4">
+            <!-- Mobile nav container (scrollable if needed) -->
+            <div class="flex items-center gap-4 text-sm font-medium overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-grow justify-center md:justify-end">
+                <button id="nav-home-btn" class="hover:text-primary transition-colors text-ink whitespace-nowrap">Home</button>
+                <button id="nav-customize-btn" class="hover:text-primary transition-colors text-muted whitespace-nowrap">Customize</button>
+                <button id="nav-profile-btn" class="hover:text-primary transition-colors text-muted whitespace-nowrap">Profile</button>
+                <a href="https://github.com/vedp9/ai-flashcards-hub" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors text-muted flex items-center gap-1 whitespace-nowrap" title="GitHub Repository">
+                    <i class="ph ph-github-logo text-lg"></i> GitHub
+                </a>
+            </div>
+            
+            <button id="theme-toggle" class="text-muted hover:text-ink transition-colors p-2 rounded-full hover:bg-divider-soft flex-shrink-0">
+                <i class="ph ph-moon text-xl" id="theme-icon"></i>
             </button>
         </div>
     </nav>
 
     <!-- Main Content Area -->
-    <main class="flex-grow px-4 md:px-8 pt-32 pb-24 max-w-6xl mx-auto w-full flex flex-col">
+    <main class="flex-grow px-4 md:px-8 pt-32 pb-24 max-w-6xl mx-auto w-full flex flex-col relative">
         
         <!-- STEP 1: DIFFICULTY SCREEN (HOME) -->
         <section id="view-difficulty" class="view-section block flex-grow flex flex-col justify-center">
             <div class="text-center mb-16 reveal-item is-visible">
-                <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-[#a1a1a6]">
+                <h1 class="apple-title-hero mb-4 text-ink">
                     Master AI Systems.
                 </h1>
-                <p class="text-xl text-[#a1a1a6] font-light">
+                <p class="apple-title-md text-muted font-light">
                     Select your starting level.
                 </p>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto w-full reveal-item is-visible">
                 <!-- Easy -->
-                <button data-difficulty="Easy" class="difficulty-card group text-left bg-white/5 border border-white/10 hover:border-[#30d158]/50 rounded-3xl p-8 transition-all hover:bg-white/10 hover:-translate-y-1">
-                    <div class="w-12 h-12 rounded-full bg-[#30d158]/20 flex items-center justify-center mb-6 text-[#30d158]">
+                <button data-difficulty="Easy" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
+                    <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mb-6 text-success">
                         <i class="ph-fill ph-leaf text-2xl"></i>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2">Easy</h2>
-                    <p class="text-[#a1a1a6] text-sm leading-relaxed">Fundamentals, basic definitions, career psychology, high-level business logic, and introductory concepts.</p>
+                    <h2 class="apple-title-md mb-2 text-ink">Easy</h2>
+                    <p class="text-muted text-sm leading-relaxed">Fundamentals, basic definitions, career psychology, high-level business logic, and introductory concepts.</p>
                 </button>
                 
                 <!-- Medium -->
-                <button data-difficulty="Medium" class="difficulty-card group text-left bg-white/5 border border-white/10 hover:border-[#ffd60a]/50 rounded-3xl p-8 transition-all hover:bg-white/10 hover:-translate-y-1">
-                    <div class="w-12 h-12 rounded-full bg-[#ffd60a]/20 flex items-center justify-center mb-6 text-[#ffd60a]">
+                <button data-difficulty="Medium" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
+                    <div class="w-12 h-12 rounded-full text-yellow-500 bg-yellow-500/10 flex items-center justify-center mb-6">
                         <i class="ph-fill ph-lightning text-2xl"></i>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2">Medium</h2>
-                    <p class="text-[#a1a1a6] text-sm leading-relaxed">System design, architecture patterns, standard ML algorithms, data engineering pipelines, and MLOps.</p>
+                    <h2 class="apple-title-md mb-2 text-ink">Medium</h2>
+                    <p class="text-muted text-sm leading-relaxed">System design, architecture patterns, standard ML algorithms, data engineering pipelines, and MLOps.</p>
                 </button>
                 
                 <!-- Hard -->
-                <button data-difficulty="Hard" class="difficulty-card group text-left bg-white/5 border border-white/10 hover:border-[#ff453a]/50 rounded-3xl p-8 transition-all hover:bg-white/10 hover:-translate-y-1">
-                    <div class="w-12 h-12 rounded-full bg-[#ff453a]/20 flex items-center justify-center mb-6 text-[#ff453a]">
+                <button data-difficulty="Hard" class="difficulty-card text-left apple-card apple-card-hover p-8 group">
+                    <div class="w-12 h-12 rounded-full bg-danger/10 flex items-center justify-center mb-6 text-danger">
                         <i class="ph-fill ph-fire text-2xl"></i>
                     </div>
-                    <h2 class="text-2xl font-bold mb-2">Hard</h2>
-                    <p class="text-[#a1a1a6] text-sm leading-relaxed">Transformer internals, Calculus, Deep Learning math, advanced Reinforcement Learning, and complex probability.</p>
+                    <h2 class="apple-title-md mb-2 text-ink">Hard</h2>
+                    <p class="text-muted text-sm leading-relaxed">Transformer internals, Calculus, Deep Learning math, advanced Reinforcement Learning, and complex probability.</p>
                 </button>
             </div>
         </section>
@@ -93,15 +150,67 @@
         <!-- STEP 2: TOPIC SELECTION SCREEN -->
         <section id="view-topics" class="view-section hidden">
             <div class="reveal-item">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-10">
                     <div>
-                        <h2 class="text-3xl font-bold mb-2" id="topic-level-title">Select a Topic</h2>
-                        <p class="text-[#a1a1a6]">Choose a specific category to study or review all.</p>
+                        <h2 class="apple-title-lg mb-2 text-ink" id="topic-level-title">Select a Topic</h2>
+                        <p class="text-muted text-lg">Choose a specific category to study or review all.</p>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="topics-grid">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="topics-grid">
                     <!-- Populated via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW FEATURE: CUSTOMIZE (UPLOAD) -->
+        <section id="view-customize" class="view-section hidden max-w-3xl mx-auto w-full">
+            <div class="reveal-item">
+                <div class="text-center mb-10">
+                    <h2 class="apple-title-lg mb-2 text-ink">Create Flashcards</h2>
+                    <p class="text-muted text-lg">Upload up to 20 files (.pdf, .html, .txt) to generate your custom collection.</p>
+                </div>
+                
+                <div class="apple-card p-10 text-center mb-8 border-dashed border-2 cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center min-h-[200px]" id="upload-dropzone">
+                    <i class="ph-fill ph-upload-simple text-4xl text-primary mb-4"></i>
+                    <p class="apple-body-strong text-ink mb-2">Click to Upload or Drag & Drop</p>
+                    <p class="text-muted text-sm">Supported: PDF, HTML, TXT (Max 20 files)</p>
+                    <input type="file" id="file-input" multiple accept=".pdf,.html,.htm,.txt" class="hidden">
+                </div>
+
+                <div id="file-list" class="flex flex-col gap-3 mb-8">
+                    <!-- Populated via JS -->
+                </div>
+
+                <div class="flex justify-between items-center bg-surface-pearl p-6 rounded-2xl border border-divider">
+                    <span id="upload-counter" class="text-muted text-sm font-medium">0 / 20 files uploaded</span>
+                    <button id="btn-generate-flashcards" class="apple-btn-primary opacity-50 cursor-not-allowed" disabled>
+                        <i class="ph-fill ph-magic-wand"></i> Generate Flashcards
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW FEATURE: PROFILE (LIBRARY) -->
+        <section id="view-profile" class="view-section hidden max-w-5xl mx-auto w-full">
+            <div class="reveal-item">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                    <div>
+                        <h2 class="apple-title-lg text-ink">My Flashcards</h2>
+                        <p class="text-muted text-lg">Your locally saved custom collections.</p>
+                    </div>
+                    <button id="btn-profile-create" class="apple-btn-utility"><i class="ph ph-plus"></i> New Collection</button>
+                </div>
+                
+                <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Populated via JS -->
+                </div>
+                
+                <div id="empty-profile-state" class="text-center py-20 hidden apple-card">
+                    <i class="ph ph-books text-6xl text-muted mb-4 opacity-50"></i>
+                    <h3 class="apple-title-md text-ink mb-2">No collections yet</h3>
+                    <p class="text-muted mb-6">You haven't generated any custom flashcards.</p>
+                    <button id="btn-empty-create" class="apple-btn-primary">Create Flashcards</button>
                 </div>
             </div>
         </section>
@@ -111,37 +220,39 @@
         <!-- FLASHCARDS VIEW -->
         <section id="view-flashcards" class="view-section hidden">
             <!-- Global Progress -->
-            <div class="w-full max-w-2xl mx-auto bg-white/5 rounded-2xl p-4 border border-white/10 mb-8 reveal-item">
-                <div class="flex justify-between text-sm mb-2 text-[#a1a1a6]">
+            <div class="w-full max-w-2xl mx-auto apple-card p-4 mb-10 reveal-item">
+                <div class="flex justify-between text-sm mb-2 text-muted">
                     <span>Topic Progress</span>
-                    <span id="progress-text" class="font-medium text-white">0 / 0 (0%)</span>
+                    <span id="progress-text" class="font-medium text-ink">0 / 0 (0%)</span>
                 </div>
-                <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-[#0A84FF] transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full h-2 bg-divider-soft rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-primary transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
 
             <!-- Card Container -->
-            <div class="perspective-1000 w-full max-w-2xl mx-auto h-[450px] mb-8 reveal-item">
+            <div class="perspective-1000 w-full max-w-2xl mx-auto h-[450px] mb-10 reveal-item relative">
                 <div id="flashcard" class="flip-card w-full h-full cursor-pointer group">
-                    <div class="flip-card-inner shadow-2xl">
+                    <div class="flip-card-inner">
                         <!-- Front -->
-                        <div class="flip-card-front bg-[#1c1c1e] group-hover:border-[#0A84FF]/50 transition-colors">
-                            <span id="card-category" class="px-3 py-1 bg-white/10 rounded-full text-xs text-[#a1a1a6] font-medium tracking-wide mb-6 uppercase text-center block max-w-full truncate"></span>
-                            <h2 id="card-word" class="text-3xl md:text-4xl font-bold mb-4 text-[#0A84FF]">Concept goes here</h2>
-                            <p id="card-simple-def" class="text-lg md:text-xl text-white font-medium mb-6">Simple definition goes here</p>
-                            <p class="text-sm text-[#a1a1a6] mt-auto flex items-center gap-1 opacity-60">
+                        <div class="flip-card-front group-hover:border-primary">
+                            <span id="card-category" class="px-3 py-1 bg-surface-pearl rounded-full text-xs text-muted font-medium tracking-wide mb-6 uppercase text-center block max-w-full truncate border border-divider"></span>
+                            <h2 id="card-word" class="apple-title-lg mb-4 text-primary">Concept goes here</h2>
+                            <p id="card-simple-def" class="text-xl text-ink font-medium mb-6">Simple definition goes here</p>
+                            <p class="text-sm text-muted mt-auto flex items-center gap-1 opacity-60">
                                 <i class="ph ph-arrows-left-right"></i> Click or press Space to flip
                             </p>
                         </div>
                         <!-- Back -->
-                        <div class="flip-card-back bg-[#1c1c1e] relative">
-                            <h3 class="text-sm font-semibold text-[#0A84FF] tracking-wider uppercase mb-3">Real-World Scenario / Trade-off</h3>
-                            <div class="bg-white/5 border-l-4 border-[#0A84FF] p-4 rounded-r-lg w-full text-left overflow-y-auto scrollbar-thin mb-4 flex-grow">
-                                <p id="card-scenario" class="text-base md:text-lg font-normal leading-relaxed text-[#e5e5ea]"></p>
+                        <div class="flip-card-back relative">
+                            <h3 class="text-sm font-semibold text-primary tracking-wider uppercase mb-4">Real-World Scenario / Trade-off</h3>
+                            <div class="bg-surface-pearl border-l-4 border-primary p-5 rounded-r-lg w-full text-left overflow-y-auto scrollbar-thin mb-4 flex-grow">
+                                <p id="card-scenario" class="text-lg font-normal leading-relaxed text-ink"></p>
                             </div>
-                            <div class="mt-auto pt-2 flex items-center gap-2 text-xs text-[#a1a1a6]">
-                                <i class="ph ph-books"></i> <span id="card-source">Source</span>
+                            <div class="mt-auto pt-2 flex items-center justify-between w-full">
+                                <div class="flex items-center gap-2 text-xs text-muted">
+                                    <i class="ph ph-books"></i> <span id="card-source">Source</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -149,28 +260,32 @@
             </div>
 
             <!-- Controls -->
-            <div class="flex flex-col items-center gap-6 reveal-item">
+            <div class="flex flex-col items-center gap-8 reveal-item">
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-4 w-full max-w-md justify-center">
-                    <button id="btn-review" class="flex-1 py-3 px-6 rounded-xl bg-[#ff453a]/10 text-[#ff453a] border border-[#ff453a]/20 hover:bg-[#ff453a]/20 font-medium flex items-center justify-center gap-2">
+                    <button id="btn-review" class="flex-1 py-3 px-6 rounded-full bg-danger/10 text-danger hover:bg-danger/20 font-medium flex items-center justify-center gap-2 border border-danger/20 transition-colors">
                         <i class="ph-fill ph-x-circle text-lg"></i> Need Review
                     </button>
-                    <button id="btn-mastered" class="flex-1 py-3 px-6 rounded-xl bg-[#30d158]/10 text-[#30d158] border border-[#30d158]/20 hover:bg-[#30d158]/20 font-medium flex items-center justify-center gap-2">
+                    <button id="btn-mastered" class="flex-1 py-3 px-6 rounded-full bg-success/10 text-success hover:bg-success/20 font-medium flex items-center justify-center gap-2 border border-success/20 transition-colors">
                         <i class="ph-fill ph-check-circle text-lg"></i> Got It!
                     </button>
                 </div>
                 <!-- Navigation -->
-                <div class="flex items-center gap-6 text-[#a1a1a6]">
-                    <button id="btn-prev" class="hover:text-white flex items-center gap-1 p-2"><i class="ph ph-arrow-left text-xl"></i> Prev</button>
+                <div class="flex items-center gap-8 text-muted">
+                    <button id="btn-prev" class="hover:text-ink flex items-center gap-1 p-2 font-medium"><i class="ph ph-arrow-left text-xl"></i> Prev</button>
                     <span id="card-counter" class="text-sm font-mono tracking-wider">1 / 10</span>
-                    <button id="btn-next" class="hover:text-white flex items-center gap-1 p-2">Next <i class="ph ph-arrow-right text-xl"></i></button>
+                    <button id="btn-next" class="hover:text-ink flex items-center gap-1 p-2 font-medium">Next <i class="ph ph-arrow-right text-xl"></i></button>
                 </div>
                 <div class="flex items-center gap-4 mt-2">
-                    <button id="btn-shuffle" class="text-sm text-[#a1a1a6] hover:text-white flex items-center gap-1">
+                    <button id="btn-edit-card" class="text-sm text-muted hover:text-ink flex items-center gap-1 hidden">
+                        <i class="ph ph-pencil-simple"></i> Edit Card
+                    </button>
+                    <span class="text-muted text-xs hidden" id="sep-edit">|</span>
+                    <button id="btn-shuffle" class="text-sm text-muted hover:text-ink flex items-center gap-1">
                         <i class="ph ph-shuffle"></i> Shuffle Queue
                     </button>
-                    <span class="text-[#a1a1a6] text-xs">|</span>
-                    <button id="reset-progress-btn" class="text-sm text-[#ff453a] hover:text-white flex items-center gap-1">
+                    <span class="text-muted text-xs">|</span>
+                    <button id="reset-progress-btn" class="text-sm text-danger hover:opacity-80 flex items-center gap-1">
                         <i class="ph ph-arrow-counter-clockwise"></i> Reset Progress
                     </button>
                 </div>
@@ -180,31 +295,31 @@
         <!-- QUIZ VIEW -->
         <section id="view-quiz" class="view-section hidden max-w-2xl mx-auto w-full">
             <div class="reveal-item">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold">Knowledge Check</h2>
-                    <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="apple-title-md text-ink">Knowledge Check</h2>
+                    <div class="flex items-center gap-2 bg-surface px-4 py-2 rounded-full border border-divider">
                         <i class="ph-fill ph-flame text-orange-500"></i>
-                        <span class="text-sm text-[#a1a1a6]">Streak: <span id="quiz-streak" class="text-white font-bold">0</span></span>
+                        <span class="text-sm text-muted">Streak: <span id="quiz-streak" class="text-ink font-bold">0</span></span>
                     </div>
                 </div>
                 
-                <div class="bg-[#1c1c1e] border border-[#2c2c2e] rounded-2xl p-6 md:p-8 shadow-xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <span id="quiz-category" class="text-xs text-[#0A84FF] font-medium uppercase tracking-wider block">Category</span>
-                        <span class="text-xs text-[#a1a1a6] bg-white/5 px-2 py-1 rounded-md">Identify the concept</span>
+                <div class="apple-card-elevated p-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <span id="quiz-category" class="text-xs text-primary font-medium uppercase tracking-wider block">Category</span>
+                        <span class="text-xs text-muted bg-surface-pearl px-2 py-1 rounded-md border border-divider">Identify the concept</span>
                     </div>
-                    <h3 id="quiz-question" class="text-lg md:text-xl font-medium mb-8 leading-relaxed">Loading prompt...</h3>
+                    <h3 id="quiz-question" class="text-xl font-medium mb-10 leading-relaxed text-ink">Loading prompt...</h3>
                     
-                    <div id="quiz-options" class="flex flex-col gap-3">
+                    <div id="quiz-options" class="flex flex-col gap-4">
                         <!-- Options populated via JS -->
                     </div>
 
-                    <div id="quiz-feedback" class="mt-6 hidden rounded-xl p-4 text-sm animate-fade-in">
+                    <div id="quiz-feedback" class="mt-8 hidden rounded-xl p-4 text-sm animate-fade-in">
                         <!-- Feedback populated via JS -->
                     </div>
 
                     <div class="mt-8 flex justify-end">
-                        <button id="btn-quiz-next" class="hidden bg-white text-black px-6 py-2 rounded-full font-medium hover:bg-gray-200 flex items-center gap-2">
+                        <button id="btn-quiz-next" class="hidden apple-btn-primary">
                             Next Question <i class="ph ph-arrow-right"></i>
                         </button>
                     </div>
@@ -216,23 +331,23 @@
         <section id="view-glossary" class="view-section hidden max-w-3xl mx-auto w-full">
             <div class="reveal-item">
                 <!-- Dropdown Filters -->
-                <div class="flex flex-col md:flex-row gap-4 mb-6">
-                    <select id="glossary-difficulty-filter" class="bg-[#1c1c1e] border border-[#2c2c2e] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#0A84FF] cursor-pointer appearance-none flex-1">
+                <div class="flex flex-col md:flex-row gap-4 mb-8">
+                    <select id="glossary-difficulty-filter" class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
                         <option value="All">All Difficulties</option>
                         <option value="Easy">Easy</option>
                         <option value="Medium">Medium</option>
                         <option value="Hard">Hard</option>
                     </select>
-                    <select id="glossary-category-filter" class="bg-[#1c1c1e] border border-[#2c2c2e] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#0A84FF] cursor-pointer appearance-none flex-1">
+                    <select id="glossary-category-filter" class="bg-surface border border-divider rounded-xl px-4 py-3 text-ink focus:outline-none focus:border-primary cursor-pointer appearance-none flex-1">
                         <!-- Populated via JS -->
                         <option value="All">All Categories</option>
                     </select>
                 </div>
 
-                <div class="mb-8 relative">
-                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-[#a1a1a6] text-xl"></i>
+                <div class="mb-10 relative">
+                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xl"></i>
                     <input type="text" id="glossary-search" placeholder="Search concepts, definitions, or scenarios..." 
-                           class="w-full bg-[#1c1c1e] border border-[#2c2c2e] rounded-xl py-4 pl-12 pr-4 text-white placeholder-[#a1a1a6] focus:outline-none focus:border-[#0A84FF] transition-colors">
+                           class="w-full bg-surface border border-divider rounded-full py-4 pl-12 pr-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm">
                 </div>
 
                 <div id="glossary-list" class="flex flex-col gap-4">
@@ -244,9 +359,53 @@
     </main>
 
     <!-- Floating Top Anchor -->
-    <a href="#" id="top-anchor" class="fixed bottom-6 left-6 w-12 h-12 glass rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors z-50">
+    <a href="#" id="top-anchor" class="fixed bottom-6 left-6 w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-colors z-50">
         <i class="ph ph-arrow-up text-xl"></i>
     </a>
+
+    <!-- MODALS & OVERLAYS -->
+
+    <!-- API KEY MODAL -->
+    <div id="api-key-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-md w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform" id="api-key-modal-content">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-muted hover:text-ink"><i class="ph ph-x text-xl"></i></button>
+            <i class="ph-fill ph-key text-3xl text-primary mb-4"></i>
+            <h3 class="apple-title-md text-ink mb-2">API Key Required</h3>
+            <p class="text-muted text-sm mb-6 leading-relaxed">To generate custom flashcards locally, please provide your Google Gemini API Key. It will be stored securely in your browser's local storage and never sent to any external server.</p>
+            <input type="password" id="api-key-input" placeholder="Enter Gemini API Key..." class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink placeholder-muted focus:outline-none focus:border-primary transition-colors shadow-sm mb-6">
+            <button id="btn-save-key" class="w-full apple-btn-primary">Save & Continue</button>
+            <p class="text-center mt-4"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-primary text-sm hover:underline">Get a free Gemini API Key</a></p>
+        </div>
+    </div>
+
+    <!-- EDIT CARD MODAL -->
+    <div id="edit-card-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="apple-card-elevated max-w-2xl w-full p-8 relative scale-95 opacity-0 transition-all duration-300 transform" id="edit-card-modal-content">
+            <button id="btn-close-edit" class="absolute top-4 right-4 text-muted hover:text-ink"><i class="ph ph-x text-xl"></i></button>
+            <h3 class="apple-body-strong text-ink mb-6">Edit Flashcard</h3>
+            
+            <label class="block text-sm font-medium text-muted mb-2">Concept / Question</label>
+            <input type="text" id="edit-word" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4">
+            
+            <label class="block text-sm font-medium text-muted mb-2">Simple Definition</label>
+            <textarea id="edit-def" rows="2" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-4"></textarea>
+
+            <label class="block text-sm font-medium text-muted mb-2">Real-World Scenario / Deep Answer</label>
+            <textarea id="edit-scenario" rows="3" class="w-full bg-surface border border-divider rounded-xl py-3 px-4 text-ink focus:outline-none focus:border-primary transition-colors shadow-sm mb-6"></textarea>
+
+            <div class="flex justify-between items-center mt-4">
+                <button id="btn-delete-card" class="apple-btn-utility text-danger border-danger/30 hover:bg-danger/10"><i class="ph ph-trash"></i> Delete Card</button>
+                <button id="btn-save-edit" class="apple-btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay" class="fixed inset-0 bg-canvas/80 backdrop-blur-md z-[200] hidden flex flex-col items-center justify-center">
+        <i class="ph ph-spinner-gap text-5xl text-primary animate-spin mb-4"></i>
+        <h3 class="apple-body-strong text-ink" id="loading-text">Generating your flashcards...</h3>
+        <p class="text-muted text-sm mt-2 max-w-sm text-center">This takes a moment depending on the size of your uploaded documents.</p>
+    </div>
 
     <!-- Scripts -->
     <script src="data.js"></script>
