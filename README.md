@@ -27,8 +27,11 @@
 
 ### Customized Flashcards
 - **One-Click Direct Access:** Bypassed intermediate profile and topic selection screens after custom generation. The app now instantly drops you into the newly generated flashcards as soon as the API finishes.
-- **Generation Speed Optimization:** Optimized the token payload threshold sent to Gemini, resulting in significantly faster (3x) text extraction and flashcard generation from uploaded files.
-- **Strict Source Grounding:** Upgraded the Gemini extraction prompt to strictly prioritize source fidelity and factual accuracy. The AI will now skip extracting concepts that lack sufficient definition in the source text instead of hallucinating outside knowledge.
+- **Large Document Processing:** Removed artificial page limitations. The system now processes large PDFs and files in their entirety by utilizing sequential chunking. (Note: Large documents may take longer to process as multiple Gemini requests are made sequentially).
+- **No-Quota Generation:** Flashcards are generated dynamically based on the meaningful concepts actually found in the uploaded material rather than a fixed card quota. Easy, Medium, and Hard classifications are based strictly on concept complexity.
+- **Robust Deduplication:** An intentional chunk overlap reduces concept loss across boundaries, while a fuzzy-matching deduplication engine filters out duplicate concepts that span across multiple chunks.
+- **Strict Source Grounding:** The Gemini extraction prompt strictly prioritizes source fidelity and factual accuracy. The AI skips concepts lacking sufficient definition in the text, ensuring it does not invent concepts simply to increase the number of cards.
+- **Partial Generation Support:** If some chunks fail during a long generation process, the successfully generated cards are preserved and the user is informed about the partial generation.
 - **Collection Management:** Added the ability to permanently delete custom-generated collections, which automatically scrubs local storage and associated review schedules.
 - **API Resilience:** Implemented exponential backoff and fallback logic to gracefully handle Google Gemini API rate limits or high-demand model errors.
 
@@ -41,7 +44,7 @@
 ## ✨ Features
 
 - **Apple-Inspired Design & Mobile-First UX:** Beautiful, minimalist, responsive interface with smooth animations. The mobile layout features an accessible top-right menu, safe-area alignments, and robust text-wrapping, paired with seamlessly saved Light & Dark modes.
-- **Source-Grounded AI Generation:** Upload any PDF, HTML, or TXT file and let Gemini extract the text to build categorized flashcards. The AI strictly prioritizes source fidelity—extracting meaningful concepts and scenarios directly from your material without hallucinating outside knowledge. Enjoy curated learning quotes during the dynamic loading process!
+- **Source-Grounded AI Generation:** Upload any PDF, HTML, or TXT file (including large documents!) and let Gemini extract the text using a sequential chunking architecture. The AI strictly prioritizes source fidelity—extracting every meaningful concept and scenario directly from your material without hallucinating outside knowledge or inventing concepts to meet artificial quotas. Enjoy curated learning quotes during the dynamic loading process!
 - **Bring-Your-Own-Key (BYOK):** Users provide their own Gemini API key, which is stored locally in the browser. The client communicates directly with Gemini rather than using an AI Flashcards Hub backend. Includes exponential backoff and retry resilience.
 - **Structured Learning:** Flashcards are automatically grouped into Easy / Medium / Hard difficulty levels, and organized by inferred Topics and Subtopics.
 - **Local Library & Profile:** All custom flashcard collections (metadata and extracted text) are stored entirely locally on your device via `localStorage`. The original uploaded binary files are *not* permanently saved. You can permanently delete custom collections at any time to scrub your local data.
