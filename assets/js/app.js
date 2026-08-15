@@ -1131,8 +1131,8 @@ const extractTextFromFile = async (file) => {
                     const typedarray = new Uint8Array(e.target.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     let text = '';
-                    // Limit to first 20 pages to avoid extreme payloads
-                    const maxPages = Math.min(pdf.numPages, 20);
+                    // Process all pages
+                    const maxPages = pdf.numPages;
                     for (let i = 1; i <= maxPages; i++) {
                         const page = await pdf.getPage(i);
                         const content = await page.getTextContent();
@@ -1241,16 +1241,31 @@ btnGenerate?.addEventListener('click', async () => {
             fileNames.push(fObj.file.name);
         }
 
-        // Limit text size to prevent payload issues and significantly speed up generation
-        combinedText = combinedText.substring(0, 30000);
+        // Implement chunking to process large documents safely
+        const CHUNK_SIZE = 60000;
+        const OVERLAP = 2000;
+        const chunks = [];
+        
+        if (combinedText.length <= CHUNK_SIZE) {
+            chunks.push(combinedText);
+        } else {
+            let start = 0;
+            while (start < combinedText.length) {
+                const end = Math.min(start + CHUNK_SIZE, combinedText.length);
+                chunks.push(combinedText.substring(start, end));
+                if (end === combinedText.length) break;
+                start += CHUNK_SIZE - OVERLAP;
+            }
+        }
 
-        const prompt = `You are generating study flashcards from user-provided learning material. 
+        const promptTemplate = (chunkText) => `You are generating study flashcards from user-provided learning material. 
 The uploaded material must be treated as the PRIMARY SOURCE OF TRUTH.
 
 CRITICAL RULES FOR SOURCE-GROUNDED GENERATION:
 1. Extract and analyze the uploaded source content.
-2. Identify only meaningful concepts that are actually explained in the source. Do NOT generate a flashcard merely because a technical word/term appears once. A concept should have enough meaningful information in the source to create a useful Concept, Simple Definition, and Real-World Scenario.
+2. Identify EVERY meaningful concept that is actually explained in the source chunk. Do NOT generate a flashcard merely because a technical word/term appears once. A concept should have enough meaningful information in the source to create a useful Concept, Simple Definition, and Real-World Scenario.
 3. If the source does not provide enough information to create a useful flashcard, skip that concept rather than generating a shallow or hallucinated card.
+4. Do NOT invent concepts just to increase quantity. If a chunk contains 3 concepts, generate 3. If it contains 20, generate 20. Do NOT force a quota.
 
 FLASHCARD STRUCTURE:
 
@@ -1276,7 +1291,7 @@ QUALITY PRIORITY:
 5. Useful real-world illustration
 Do NOT prioritize creativity over accuracy.
 
-Create flashcards in three difficulty levels (easy, medium, hard).
+Categorize flashcards into three difficulty levels (easy, medium, hard) strictly based on the inherent complexity of the concept, not by an arbitrary equal split.
 Infer a high-level "topic" and "subtopic" based on the material. If it cannot be confidently inferred, fallback to "General" for topic and null for subtopic.
 
 Return a raw JSON object (without markdown code blocks) with this exact structure:
@@ -1286,120 +1301,145 @@ Return a raw JSON object (without markdown code blocks) with this exact structur
   "medium": [ { "word": "Concept Name", "simple_def": "Definition", "real_world_scenario": "A brief scenario", "topic": "...", "subtopic": "..." } ],
   "hard": [ { "word": "Concept Name", "simple_def": "Definition", "real_world_scenario": "A brief scenario", "topic": "...", "subtopic": "..." } ]
 }
-Make at least 3-5 cards per category if possible. Ensure no markdown formatting surrounds the JSON.
+Ensure no markdown formatting surrounds the JSON.
 
-Source Material:
-${combinedText}
+Source Material Chunk:
+${chunkText}
 `;
 
-        let data = null;
-        let retries = 3;
-        let delay = 1500;
-        let currentModel = 'gemini-3.6-flash';
+        const collectionId = 'col_' + Date.now();
+        const masterCards = { easy: [], medium: [], hard: [] };
+        let masterTitle = 'Custom Flashcards';
+        
+        let chunksProcessed = 0;
+        let chunksFailed = 0;
+        const seenConcepts = new Set();
+        const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        while (retries > 0) {
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${state.geminiApiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0.2,
-                            responseMimeType: "application/json"
-                        }
-                    })
-                });
+        for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+            const chunkText = chunks[chunkIndex];
+            const prompt = promptTemplate(chunkText);
+            
+            let data = null;
+            let retries = 3;
+            let delay = 1500;
+            let currentModel = 'gemini-3.6-flash';
+            let success = false;
 
-                data = await res.json();
+            while (retries > 0) {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${state.geminiApiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0.2,
+                                responseMimeType: "application/json"
+                            }
+                        })
+                    });
 
-                if (data.error) {
-                    const msg = data.error.message || "";
-                    if (msg.includes('high demand') || msg.includes('Too Many Requests') || msg.includes('503')) {
-                        console.warn(`[API] High demand on ${currentModel}. Retries left: ${retries - 1}. Retrying in ${delay}ms...`);
-                        await new Promise(r => setTimeout(r, delay));
-                        delay *= 2;
-                        retries--;
-                        
-                        if (retries === 0 && currentModel === 'gemini-3.6-flash') {
+                    data = await res.json();
+
+                    if (data.error) {
+                        const msg = data.error.message || "";
+                        if (msg.includes('high demand') || msg.includes('Too Many Requests') || msg.includes('503')) {
+                            console.warn(`[API] High demand on ${currentModel}. Retries left: ${retries - 1}. Retrying in ${delay}ms...`);
+                            await new Promise(r => setTimeout(r, delay));
+                            delay *= 2;
+                            retries--;
+                            
+                            if (retries === 0 && currentModel === 'gemini-3.6-flash') {
+                                currentModel = 'gemini-1.5-flash';
+                                retries = 2;
+                                delay = 1000;
+                                console.warn(`[API] Falling back to ${currentModel}`);
+                            }
+                        } else if (data.error.code === 404 || msg.includes('no longer available') || msg.includes('not found')) {
+                            console.warn(`[API] Model ${currentModel} unavailable. Falling back to gemini-1.5-flash...`);
                             currentModel = 'gemini-1.5-flash';
-                            retries = 2;
-                            delay = 1000;
-                            console.warn(`[API] Falling back to ${currentModel}`);
-                        } else if (retries === 0) {
-                            throw new Error(data.error.message);
+                        } else {
+                            throw new Error(data.error.message || "API Error");
                         }
-                    } else if (data.error.code === 404 || msg.includes('no longer available') || msg.includes('not found')) {
-                        console.warn(`[API] Model ${currentModel} unavailable. Falling back to gemini-1.5-flash...`);
-                        currentModel = 'gemini-1.5-flash';
                     } else {
-                        throw new Error(data.error.message || "API Error");
+                        success = true;
+                        break;
                     }
-                } else {
-                    break;
+                } catch (err) {
+                    if (retries <= 1) {
+                        console.error(`Chunk ${chunkIndex + 1} failed:`, err);
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                    retries--;
                 }
-            } catch (err) {
-                if (retries <= 1) throw err;
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
-                retries--;
+            }
+
+            if (success && data && data.candidates && data.candidates[0]) {
+                try {
+                    let generatedJsonText = data.candidates[0].content.parts[0].text;
+                    generatedJsonText = generatedJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    const result = JSON.parse(generatedJsonText);
+                    
+                    if (chunkIndex === 0 && result.title) masterTitle = result.title;
+                    
+                    const processCards = (arr, diff) => {
+                        if (!arr || !Array.isArray(arr)) return;
+                        arr.forEach((c) => {
+                            if (!c.word || typeof c.word !== 'string') return;
+                            if (!c.simple_def || typeof c.simple_def !== 'string') return;
+                            if (!c.real_world_scenario || typeof c.real_world_scenario !== 'string') return;
+                            
+                            const normWord = normalize(c.word);
+                            if (seenConcepts.has(normWord)) {
+                                console.log(`[Deduplication] Skipped duplicate concept: ${c.word}`);
+                                return;
+                            }
+                            seenConcepts.add(normWord);
+                            
+                            const targetDiff = diff.toLowerCase();
+                            masterCards[targetDiff].push({
+                                id: `${collectionId}_${diff}_${masterCards[targetDiff].length}`,
+                                category: diff,
+                                difficulty: diff,
+                                word: c.word,
+                                simple_def: c.simple_def,
+                                real_world_scenario: c.real_world_scenario,
+                                topic: c.topic || 'General',
+                                subtopic: c.subtopic || null,
+                                source: fileNames[0] + (fileNames.length > 1 ? ` (+${fileNames.length - 1})` : '')
+                            });
+                        });
+                    };
+                    
+                    processCards(result.easy, 'Easy');
+                    processCards(result.medium, 'Medium');
+                    processCards(result.hard, 'Hard');
+                    
+                    chunksProcessed++;
+                } catch (parseErr) {
+                    console.error(`Error parsing JSON for chunk ${chunkIndex + 1}`, parseErr);
+                    chunksFailed++;
+                }
+            } else {
+                chunksFailed++;
             }
         }
 
-        let generatedJsonText = data.candidates[0].content.parts[0].text;
+        if (chunksProcessed === 0) {
+            throw new Error("Failed to extract flashcards from any part of the document.");
+        }
 
-        // Clean up if it returned markdown
-        generatedJsonText = generatedJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const result = JSON.parse(generatedJsonText);
-
-        // Format into internal structure
-        const collectionId = 'col_' + Date.now();
-
-        let validCardCount = 0;
-        const processCards = (arr, diff) => {
-            if (!arr || !Array.isArray(arr)) return [];
-            const validCards = [];
-            arr.forEach((c, i) => {
-                // Structural validation
-                if (!c.word || typeof c.word !== 'string') {
-                    console.warn(`[Validation] Dropped card at ${diff}[${i}]: Missing or invalid 'word'.`);
-                    return;
-                }
-                if (!c.simple_def || typeof c.simple_def !== 'string') {
-                    console.warn(`[Validation] Dropped card "${c.word}": Missing or invalid 'simple_def'.`);
-                    return;
-                }
-                if (!c.real_world_scenario || typeof c.real_world_scenario !== 'string') {
-                    console.warn(`[Validation] Dropped card "${c.word}": Missing or invalid 'real_world_scenario'.`);
-                    return;
-                }
-
-                validCardCount++;
-                validCards.push({
-                    id: `${collectionId}_${diff}_${i}`,
-                    category: diff,
-                    difficulty: diff,
-                    word: c.word,
-                    simple_def: c.simple_def,
-                    real_world_scenario: c.real_world_scenario,
-                    topic: c.topic || 'General',
-                    subtopic: c.subtopic || null,
-                    source: fileNames[0] + (fileNames.length > 1 ? ` (+${fileNames.length - 1})` : '')
-                });
-            });
-            return validCards;
-        };
+        const validCardCount = masterCards.easy.length + masterCards.medium.length + masterCards.hard.length;
 
         const collection = {
             id: collectionId,
-            title: result.title || 'Custom Flashcards',
+            title: masterTitle,
             date: new Date().toLocaleDateString(),
             files: fileNames,
-            cards: {
-                easy: processCards(result.easy, 'Easy'),
-                medium: processCards(result.medium, 'Medium'),
-                hard: processCards(result.hard, 'Hard')
-            }
+            cards: masterCards
         };
 
         state.customCollections[collectionId] = collection;
@@ -1410,7 +1450,12 @@ ${combinedText}
         updateFileUI();
 
         hideLoading();
-        showToast(`${validCardCount} flashcards generated successfully.`);
+        
+        if (chunksFailed > 0) {
+            showToast(`Generated ${validCardCount} flashcards. Partial success: ${chunksProcessed} chunks processed, ${chunksFailed} failed.`, "warning");
+        } else {
+            showToast(`${validCardCount} flashcards generated successfully from ${chunksProcessed} chunks.`);
+        }
         
         // Jump straight into the Easy/Medium/Hard selection screen
         showCustomCollection(collectionId);
